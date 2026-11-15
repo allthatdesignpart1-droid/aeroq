@@ -1,0 +1,3058 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AERO-Q AI 워크벤치 — 항공우주 제조 품질·설비 운영 콘솔</title>
+  <style>
+    :root {
+      --bg-base: #06090F;
+      --bg-surface: #0D131F;
+      --bg-surface-elevated: #141D2E;
+      --bg-surface-hover: #1C283F;
+      --border-color: #1E2D45;
+      --border-focus: #00F0FF;
+      --border-glow: rgba(0, 240, 255, 0.3);
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+      --text-dim: #52637A;
+      --accent-cyan: #00F0FF;
+      --accent-blue: #3B82F6;
+      --accent-indigo: #818CF8;
+      --accent-purple: #C084FC;
+      --status-pass: #10B981;
+      --status-pass-bg: rgba(16, 185, 129, 0.15);
+      --status-warn: #F59E0B;
+      --status-warn-bg: rgba(245, 158, 11, 0.15);
+      --status-crit: #FF3366;
+      --status-crit-bg: rgba(255, 51, 102, 0.18);
+      --font-mono: "JetBrains Mono", "SF Mono", "Consolas", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 60%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+    }
+
+    /* 상단 미션 컨트롤 배너 */
+    .top-banner {
+      background: linear-gradient(90deg, #4A1515 0%, #78350F 35%, #0F373E 70%, #1E1B4B 100%);
+      color: #F8FAFC;
+      padding: 5px 20px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    .top-banner .badge {
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    /* 메인 네비게이션 헤더 */
+    header {
+      background: rgba(13, 19, 31, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #00F0FF 0%, #2563EB 60%, #7C3AED 100%);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 15px;
+      color: #050811;
+      letter-spacing: -0.5px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+      position: relative;
+    }
+    .logo-mark::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #00F0FF, transparent);
+      z-index: -1;
+      opacity: 0.6;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+
+    /* 조인 키 컨텍스트 바 */
+    .context-strip {
+      background: rgba(20, 29, 46, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 4px 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .context-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .context-label {
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .context-val {
+      color: var(--accent-cyan);
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    }
+
+    /* 헤더 컨트롤 우측 */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+    .btn:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--border-glow);
+      color: #fff;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
+      border-color: #38BDF8;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369A1 0%, #1D4ED8 100%);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+    }
+    .btn-danger {
+      background: rgba(255, 51, 102, 0.15);
+      border-color: var(--status-crit);
+      color: #FFA5BA;
+    }
+    .btn-danger:hover {
+      background: rgba(255, 51, 102, 0.3);
+      box-shadow: 0 0 12px rgba(255, 51, 102, 0.5);
+    }
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    .btn-icon {
+      padding: 5px;
+      width: 28px;
+      height: 28px;
+      justify-content: center;
+    }
+
+    /* 3초 규칙 상단 KPI 서머리 바 */
+    .kpi-summary-bar {
+      background: rgba(8, 12, 20, 0.9);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 24px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .kpi-card {
+      background: linear-gradient(180deg, rgba(20, 29, 46, 0.8) 0%, rgba(13, 19, 31, 0.95) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover {
+      border-color: rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.6), transparent);
+    }
+    .kpi-title {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .kpi-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+    .kpi-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* 3중 상태 표기 배지 (색+형태+문구) */
+    .state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+    .state-badge.pass {
+      background: var(--status-pass-bg);
+      color: var(--status-pass);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+    }
+    .state-badge.warn {
+      background: var(--status-warn-bg);
+      color: var(--status-warn);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+    }
+    .state-badge.crit {
+      background: var(--status-crit-bg);
+      color: var(--status-crit);
+      border: 1px solid rgba(255, 51, 102, 0.5);
+      box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+      animation: pulseCrit 1.8s infinite;
+    }
+    @keyframes pulseCrit {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+    .shape-icon {
+      font-size: 10px;
+    }
+
+    /* 탭 네비게이션 */
+    .nav-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-surface);
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      padding: 11px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .tab-btn.active {
+      color: var(--accent-cyan);
+      border-bottom-color: var(--accent-cyan);
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.08) 0%, rgba(0, 240, 255, 0.01) 100%);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+    .tab-tag {
+      font-size: 9px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .tab-btn.active .tab-tag {
+      background: rgba(0, 240, 255, 0.2);
+      color: var(--accent-cyan);
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+
+    /* 메인 뷰 컨테이너 */
+    main {
+      flex: 1;
+      padding: 20px 24px;
+      max-width: 1780px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: tabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 그리드 레이아웃 */
+    .grid-layout-2 {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+    }
+    .grid-layout-eq {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .grid-layout-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 1280px) {
+      .grid-layout-2, .grid-layout-eq, .grid-layout-3 {
+        grid-template-columns: 1fr;
+      }
+      .kpi-summary-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* 고정밀 패널 카드 */
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+    .panel-card::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 12px; height: 12px;
+      border-top: 2px solid var(--accent-cyan);
+      border-right: 2px solid var(--accent-cyan);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .panel-header {
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.3px;
+    }
+    .panel-body {
+      padding: 16px;
+      flex: 1;
+    }
+
+    /* NDI 스캔 뷰어 컨테이너 */
+    .scan-viewer-wrapper {
+      position: relative;
+      background: #03060B;
+      border: 1px solid #1E2D45;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 420px;
+    }
+    .scan-canvas {
+      cursor: crosshair;
+      display: block;
+      width: 100%;
+      height: 420px;
+      image-rendering: pixelated;
+    }
+    .viewer-toolbar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      gap: 6px;
+      background: rgba(10, 16, 26, 0.85);
+      backdrop-filter: blur(6px);
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      z-index: 10;
+    }
+    .viewer-info-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(10, 16, 26, 0.9);
+      backdrop-filter: blur(4px);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-cyan);
+      border: 1px solid var(--border-color);
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+    }
+    .colormap-legend {
+      position: absolute;
+      right: 14px;
+      top: 55px;
+      width: 14px;
+      height: 220px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      background: linear-gradient(to bottom, #FF0000 0%, #FFA500 25%, #FFFF00 50%, #00FF00 75%, #0000FF 100%);
+    }
+    .colormap-ticks {
+      position: absolute;
+      right: 34px;
+      top: 55px;
+      height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      text-align: right;
+    }
+
+    /* 돋보기 루페 (Magnifier Loupe) */
+    .loupe-overlay {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border: 2px solid var(--accent-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4), inset 0 0 15px rgba(0, 0, 0, 0.8);
+      pointer-events: none;
+      display: none;
+      overflow: hidden;
+      background: #000;
+      z-index: 20;
+    }
+    .loupe-canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+
+    /* 테이블 스타일 */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .data-table th {
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+    .data-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+    .data-table tr:hover {
+      background: rgba(0, 240, 255, 0.05);
+      cursor: pointer;
+    }
+    .data-table tr.selected {
+      background: rgba(0, 240, 255, 0.12);
+      outline: 1px solid var(--accent-cyan);
+    }
+
+    /* 폼 요소 */
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-control {
+      width: 100%;
+      background: #080D16;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+    }
+    select.form-control {
+      cursor: pointer;
+    }
+    textarea.form-control {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    /* 모달 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(3, 6, 12, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 240, 255, 0.15);
+      animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalPop {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-surface-elevated);
+    }
+    .modal-body {
+      padding: 18px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-footer {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      background: var(--bg-surface-elevated);
+    }
+
+    /* 슬라이더 컨트롤 */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .slider-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      width: 140px;
+    }
+    .slider-input {
+      flex: 1;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+    .slider-val {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      width: 65px;
+      text-align: right;
+      color: var(--accent-cyan);
+    }
+
+    /* 3D 캔버스 컨테이너 */
+    .canvas-3d-box {
+      width: 100%;
+      height: 280px;
+      background: radial-gradient(circle at center, #0B1324 0%, #03060C 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      position: relative;
+      cursor: grab;
+      overflow: hidden;
+    }
+    .canvas-3d-box:active {
+      cursor: grabbing;
+    }
+    .canvas-3d-hint {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      background: rgba(0,0,0,0.5);
+      padding: 2px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* 오디오 및 사운드 스위치 */
+    .audio-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* 하단 푸터 */
+    footer {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--status-pass);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 10px var(--status-pass);
+      animation: pulseDot 1.5s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. 최상단 미션 크리티컬 배너 -->
+  <div class="top-banner">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span class="badge" style="background: rgba(255, 51, 102, 0.25); border-color: var(--status-crit); color: #FFA5BA;">MISSION CRITICAL</span>
+      <span>⚠️ <strong>[합성 데이터 모드]</strong> 본 워크벤치는 항공우주 NDI·설비 예지보전 AI 검증용 합성 시뮬레이션 콘솔입니다.</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <span class="audio-switch" onclick="toggleAudioFx()">
+        <span id="audioFxIcon">🔊</span> <span id="audioFxLabel">사운드 효과: ON</span>
+      </span>
+      <span class="badge">AIR-GAP ISOLATED</span>
+      <span class="badge" style="color: #4ADE80;">PTP Sync: ±0.4ms</span>
+    </div>
+  </div>
+
+  <!-- 2. 주 헤더 및 조인 키 컨텍스트 바 -->
+  <header>
+    <div class="brand-group">
+      <div class="logo-mark">AQ</div>
+      <div>
+        <div class="brand-title">
+          AERO-Q <span style="color: var(--accent-cyan);">WORKBENCH</span>
+          <span style="font-size: 10px; padding: 2px 6px; background: rgba(0, 240, 255, 0.15); color: var(--accent-cyan); border-radius: 4px; font-weight: 700; border: 1px solid rgba(0, 240, 255, 0.3);">PRO v1.2</span>
+        </div>
+        <div class="brand-sub">AEROSPACE QUALITY & EQUIPMENT INTELLIGENCE</div>
+      </div>
+    </div>
+
+    <!-- 12개 최소 조인 키(Join Key) 표시 바 -->
+    <div class="context-strip">
+      <div class="context-item">
+        <span class="context-label">PART:</span>
+        <select id="partSelect" class="form-control" style="padding: 2px 6px; font-size: 11px; width: 155px; height: 24px;" onchange="changePartContext(this.value)">
+          <option value="FUSELAGE-SEC47-L08" selected>FUSELAGE-SEC47-L08</option>
+          <option value="WING-SPAR-B78-01">WING-SPAR-B78-01</option>
+          <option value="EMPENNAGE-RIB-12">EMPENNAGE-RIB-12</option>
+        </select>
+      </div>
+      <div class="context-item">
+        <span class="context-label">LOT/SN:</span>
+        <span class="context-val" id="lotSnDisplay">LOT-202611-B04 / #8842</span>
+      </div>
+      <div class="context-item">
+        <span class="context-label">OP/TOOL:</span>
+        <span class="context-val" id="opToolDisplay">OP-140 (NDI) / GNT-US-03</span>
+      </div>
+      <div class="context-item">
+        <span class="context-label">MODEL:</span>
+        <span class="context-val" style="color: var(--accent-indigo);">OneClass-Seg-v2.4.1</span>
+      </div>
+    </div>
+
+    <!-- 헤더 우측 액션 -->
+    <div class="header-actions">
+      <button class="btn btn-sm" onclick="openGithubModal()" id="githubConnectBtn" style="border-color: rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05);">
+        <svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor" style="display: inline-block; vertical-align: middle;">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+        </svg>
+        <span id="githubStatusLabel">GitHub 계정 연결</span>
+      </button>
+      <button class="btn btn-sm" onclick="open3dTwinModal()">
+        <span>🛰️</span> 3D 디지털 트윈
+      </button>
+      <button class="btn btn-sm" onclick="openModelRegistryModal()">
+        <span>📋</span> 모델 카드
+      </button>
+      <button class="btn btn-sm" onclick="openAuditLogModal()">
+        <span>📜</span> 감사 로그
+      </button>
+      <div style="border-left: 1px solid var(--border-color); height: 20px; margin: 0 4px;"></div>
+      <span class="state-badge pass" id="operatorBadge">
+        <span class="shape-icon">●</span> P1 검사원 (Lv.III)
+      </span>
+    </div>
+  </header>
+
+  <!-- 3. 3초 규칙 상단 KPI 서머리 바 -->
+  <section class="kpi-summary-bar">
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-title">NDI C-scan 자동 판독 (모듈 B)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiDefectCount" style="color: var(--status-warn);">2 건</span>
+          <span class="kpi-sub">결함 후보 (HITL 검토 대기)</span>
+        </div>
+      </div>
+      <span class="state-badge warn"><span class="shape-icon">▲</span> 주의 요망</span>
+    </div>
+
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-title">AFP 로봇 C축 RUL 잔여수명 (모듈 C)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiRulHours" style="color: var(--accent-cyan);">142.5 h</span>
+          <span class="kpi-sub">D-17.8일 (신뢰도 88.4%)</span>
+        </div>
+      </div>
+      <span class="state-badge warn"><span class="shape-icon">▲</span> 정비 창구</span>
+    </div>
+
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-title">AS9103 KC 공정능력 (모듈 E)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" style="color: var(--status-pass);">Cpk 1.74</span>
+          <span class="kpi-sub">목표 1.67 충족 (0.09 PPM)</span>
+        </div>
+      </div>
+      <span class="state-badge pass"><span class="shape-icon">●</span> 공정 우수</span>
+    </div>
+
+    <div class="kpi-card">
+      <div>
+        <div class="kpi-title">인시추 선행 예측 거리 (모듈 A)</div>
+        <div class="kpi-value-row">
+          <span class="kpi-value" id="kpiLeadDist" style="color: #FBBF24;">3.8 mm</span>
+          <span class="kpi-sub">헤드 속도 850mm/s 감속 권고</span>
+        </div>
+      </div>
+      <span class="state-badge pass"><span class="shape-icon">●</span> 정상 제어</span>
+    </div>
+
+    <!-- 빠른 액션 버튼 -->
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <button class="btn btn-sm btn-primary" onclick="switchTab('tab-ndi')">
+        <span>🔍</span> C-scan 정밀 판독
+      </button>
+      <button class="btn btn-sm" onclick="exportFullReport()">
+        <span>📥</span> AS9100 품질 성적서 출력
+      </button>
+    </div>
+  </section>
+
+  <!-- 4. 네비게이션 탭 -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-ndi')">
+      <span>모듈 B. NDI C-scan 초음파 판독</span>
+      <span class="tab-tag" style="background: rgba(0, 240, 255, 0.2); color: var(--accent-cyan);">MVP 핵심 P0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-rul')">
+      <span>모듈 C. 설비 RUL & FFT 스펙트럼</span>
+      <span class="tab-tag" style="background: rgba(0, 240, 255, 0.2); color: var(--accent-cyan);">MVP 핵심 P0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-spc')">
+      <span>모듈 E. SPC · AS9103 Cpk 관리도</span>
+      <span class="tab-tag" style="background: rgba(0, 240, 255, 0.2); color: var(--accent-cyan);">AS9103 P0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-insitu')">
+      <span>모듈 A. AFP 8-Tow 인시추 모니터링</span>
+      <span class="tab-tag">v1.0 P1</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-sim')">
+      <span>모듈 D. 3D 공정 반응표면 시뮬레이터</span>
+      <span class="tab-tag">v1.0 P0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tab-rag')">
+      <span>모듈 F. 지식 검색 (RAG Assistant)</span>
+      <span class="tab-tag">v2.0 P2</span>
+    </button>
+  </nav>
+
+  <!-- 메인 탭 콘텐츠 -->
+  <main>
+
+    <!-- ================================================================= -->
+    <!-- 탭 B: NDI C-scan / B-scan / A-scan 3중 동기화 판독 (극대화된 시각화) -->
+    <!-- ================================================================= -->
+    <section id="tab-ndi" class="tab-pane active">
+      <div class="grid-layout-2">
+        <!-- 좌측: C-scan + B-scan + A-scan 오실로스코프 -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- C-scan 히트맵 & 돋보기 루페 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>📡</span> 초음파 2D C-scan 감쇠 히트맵 뷰어 (DICONDE / ASTM E2339)
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-sm" onclick="toggleRadarSweep()" id="radarSweepBtn">레이더 스캔: ON</button>
+                <button class="btn btn-sm" onclick="toggleOverlayBoxes()" id="overlayToggleBtn">AI 바운딩박스: ON</button>
+                <button class="btn btn-sm" onclick="toggleLoupe()" id="loupeToggleBtn">🔍 돋보기 루페</button>
+              </div>
+            </div>
+            <div class="panel-body" style="padding: 10px;">
+              <div class="scan-viewer-wrapper" id="scanViewerContainer">
+                <canvas id="cscanCanvas" class="scan-canvas" width="840" height="420"></canvas>
+                
+                <!-- 돋보기 루페 오버레이 -->
+                <div class="loupe-overlay" id="loupeOverlay">
+                  <canvas id="loupeCanvas" class="loupe-canvas" width="120" height="120"></canvas>
+                </div>
+
+                <!-- 툴바 -->
+                <div class="viewer-toolbar">
+                  <button class="btn btn-sm" onclick="changeColorMap('jet')">Jet</button>
+                  <button class="btn btn-sm" onclick="changeColorMap('turbo')">Turbo</button>
+                  <button class="btn btn-sm" onclick="changeColorMap('viridis')">Viridis</button>
+                  <button class="btn btn-sm" onclick="changeColorMap('gray')">B&W</button>
+                </div>
+
+                <div class="colormap-legend" id="colormapLegendBar"></div>
+                <div class="colormap-ticks">
+                  <span>0 dB (전반사)</span>
+                  <span>-6 dB (판정임계)</span>
+                  <span>-12 dB</span>
+                  <span>-24 dB (완전감쇠)</span>
+                </div>
+
+                <div class="viewer-info-badge" id="cscanCoords">
+                  X: 182.4 mm | Y: 94.2 mm | Amp: -14.2 dB | 결함 선택: #1 (박리)
+                </div>
+              </div>
+
+              <!-- DICONDE 시험 메타데이터 -->
+              <div style="margin-top: 10px; background: var(--bg-surface-elevated); padding: 8px 14px; border-radius: 4px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); border: 1px solid var(--border-color);">
+                <span>장비: GANT-US-03 (5.0MHz Dual)</span>
+                <span>소재: CFRP 32-Ply Quasi-isotropic (6.35mm)</span>
+                <span>게인: 42.0 dB (DAC-04 보정)</span>
+                <span>스캔 피치: 0.5 mm × 0.5 mm</span>
+                <span>검사자: INSP-7704 (Level III)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- B-scan 깊이 단면 프로파일 + A-scan RF 고주파 오실로스코프 (2단 그리드) -->
+          <div class="grid-layout-eq">
+            <!-- B-scan 깊이 단면 -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <span>📊</span> B-scan 깊이 단면 프로파일 (ToF)
+                </div>
+                <span style="font-family: var(--font-mono); font-size: 10px; color: var(--accent-cyan);">결함 #<span id="bscanSelectedId">1</span> 절단선</span>
+              </div>
+              <div class="panel-body" style="padding: 10px;">
+                <canvas id="bscanCanvas" style="width: 100%; height: 130px; background: #02050B; border: 1px solid var(--border-color); border-radius: 4px;"></canvas>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: 4px;">
+                  <span>표면 (Z=0.0mm)</span>
+                  <span style="color: var(--status-crit);">★ Ply 14 결함층 (3.12mm)</span>
+                  <span>배면 (Z=6.35mm)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- A-scan 실시간 RF 오실로스코프 파형 -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <span>⚡</span> A-scan RF 고주파 에코 파형
+                </div>
+                <span class="live-dot"></span>
+              </div>
+              <div class="panel-body" style="padding: 10px;">
+                <canvas id="ascanCanvas" style="width: 100%; height: 130px; background: #02050B; border: 1px solid var(--border-color); border-radius: 4px;"></canvas>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-top: 4px;">
+                  <span>초기 펄스</span>
+                  <span style="color: #00F0FF;">결함 피크: -14.2 dB</span>
+                  <span>배면 에코 감쇠</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 우측: 3D 부품 결함 투영 + 결함 테이블 + HITL 서명 콘솔 -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+
+          <!-- 3D 항공우주 복합재 부품 입체 투영 뷰어 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🛰️</span> 3D 동체 구조물 결함 위치 투영 (Section 47)
+              </div>
+              <button class="btn btn-sm btn-icon" onclick="reset3dCamera()" title="카메라 리셋">🔄</button>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+              <div class="canvas-3d-box" id="part3dContainer">
+                <canvas id="part3dCanvas" width="400" height="260" style="display: block; width: 100%; height: 260px;"></canvas>
+                <div class="canvas-3d-hint">마우스 드래그: 360° 회전 | 휠: 줌</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI 결함 후보 목록 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🎯</span> AI 검출 결함 후보 (<span id="defectListCount">2</span>)
+              </div>
+              <span class="state-badge warn" style="font-size: 10px;">Recall ≥ 0.95</span>
+            </div>
+            <div class="panel-body" style="padding: 0; max-height: 180px; overflow-y: auto;">
+              <table class="data-table" id="defectCandidateTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>유형</th>
+                    <th>좌표(X,Y)</th>
+                    <th>등가경</th>
+                    <th>신뢰도</th>
+                    <th>조치</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="selected" onclick="selectDefect(0)">
+                    <td><strong>#1</strong></td>
+                    <td><span style="color: #FF5A7E; font-weight: 700;">박리(Delam)</span></td>
+                    <td>(182, 94)</td>
+                    <td>6.2 mm</td>
+                    <td><span style="color: #00F0FF; font-family: var(--font-mono); font-weight: 700;">94.8%</span></td>
+                    <td><button class="btn btn-sm" onclick="event.stopPropagation(); markFalsePositive(0)">오탐</button></td>
+                  </tr>
+                  <tr onclick="selectDefect(1)">
+                    <td><strong>#2</strong></td>
+                    <td><span style="color: #FBBF24; font-weight: 700;">기공(Porosity)</span></td>
+                    <td>(340, 165)</td>
+                    <td>2.8 mm</td>
+                    <td><span style="color: #00F0FF; font-family: var(--font-mono); font-weight: 700;">88.2%</span></td>
+                    <td><button class="btn btn-sm" onclick="event.stopPropagation(); markFalsePositive(1)">오탐</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- HITL 검사원 최종 판정 서명 콘솔 -->
+          <div class="panel-card" style="border-color: rgba(0, 240, 255, 0.4);">
+            <div class="panel-header" style="background: rgba(0, 240, 255, 0.08);">
+              <div class="panel-title" style="color: var(--accent-cyan);">
+                <span>✍️</span> 검사원 최종 판정 서명 (HITL)
+              </div>
+              <span class="state-badge crit" style="font-size: 10px;">P1 레벨 III 전용</span>
+            </div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="form-label">최종 판정 선택</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                  <button type="button" class="btn" id="verdictAcceptBtn" onclick="setVerdict('ACCEPT')" style="justify-content: center;">
+                    <span style="color: var(--status-pass);">●</span> 합격
+                  </button>
+                  <button type="button" class="btn" id="verdictCondBtn" onclick="setVerdict('CONDITIONAL')" style="justify-content: center;">
+                    <span style="color: var(--status-warn);">▲</span> 조건부(MRB)
+                  </button>
+                  <button type="button" class="btn btn-danger" id="verdictRejectBtn" onclick="setVerdict('REJECT')" style="justify-content: center; border-width: 2px;">
+                    <span style="color: var(--status-crit);">■</span> 불합격(Scrap)
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">부적합 사유 코드 (AS9100)</label>
+                <select class="form-control" id="dispositionReasonCode">
+                  <option value="NC-DELAM-01">NC-DELAM-01: 등가직경 5.0mm 초과 층간 박리 검출</option>
+                  <option value="NC-POROSITY-03">NC-POROSITY-03: 국부 기공 밀도 초과 (감쇠 > 6dB)</option>
+                  <option value="NC-DISBOND-02">NC-DISBOND-02: 코어-스킨 접합 계면 분리</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">검사원 기술 소견</label>
+                <textarea class="form-control" id="inspectorComment" placeholder="후보 #1(X:182, Y:94) 결함은 B-scan 깊이 3.12mm 지점에서 확연한 박리 에코를 보이며 규격 상한(5.0mm)을 초과함."></textarea>
+              </div>
+
+              <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 9px;" onclick="submitFinalVerdict()">
+                <span>🔒</span> 판정 서명 확정 및 QMS 전송
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 탭 C: 설비 RUL 예지보전 & FFT 주파수 스펙트럼 (극대화된 시각화) -->
+    <!-- ================================================================= -->
+    <section id="tab-rul" class="tab-pane">
+      <div class="grid-layout-2">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- HI 추이 + 몬테카를로 열화 시뮬레이션 앙상블 궤적 차트 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>📈</span> 설비 건전성 지수(HI) 추이 & 몬테카를로 50개 열화 궤적 시뮬레이션
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <span class="state-badge warn">정비 창구 권고 (14일 이내)</span>
+              </div>
+            </div>
+            <div class="panel-body">
+              <canvas id="rulChartCanvas" style="width: 100%; height: 320px; background: #03060C; border: 1px solid var(--border-color); border-radius: 6px;"></canvas>
+              
+              <div style="margin-top: 10px; display: flex; justify-content: space-around; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 16px; height: 3px; background: #00F0FF; display: inline-block;"></span> 과거 관측 HI 실선
+                </span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 16px; height: 3px; background: #F59E0B; display: inline-block; border-top: 2px dashed #F59E0B;"></span> 미래 중앙 예측선
+                </span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 14px; height: 10px; background: rgba(0, 240, 255, 0.15); display: inline-block; border: 1px solid rgba(0, 240, 255, 0.4);"></span> 90% 신뢰구간
+                </span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 16px; height: 2px; background: #FF3366; display: inline-block;"></span> 정지 한계(0.40)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 실시간 베어링 진동 FFT 주파수 스펙트럼 분석기 (신규 시각화) -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🌊</span> 베어링 가속도 FFT 주파수 스펙트럼 분석기 (0 ~ 2,000 Hz)
+              </div>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--status-crit);">BPFI 결함 피크 감지 (162 Hz)</span>
+            </div>
+            <div class="panel-body" style="padding: 10px;">
+              <canvas id="fftCanvas" style="width: 100%; height: 160px; background: #02050B; border: 1px solid var(--border-color); border-radius: 4px; display: block;"></canvas>
+              <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 6px;">
+                <span>1X 회전주파수 (30 Hz)</span>
+                <span style="color: var(--status-crit); font-weight: 700;">★ BPFI 내륜결함 (162 Hz: +14.8 dB)</span>
+                <span>2X 고조파 (60 Hz)</span>
+                <span>고주파 공진대역 (1.2 kHz)</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 우측: 인터랙티브 운전 조건 슬라이더 & 작업지시 생성 -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- 운전 조건 인터랙티브 시뮬레이터 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🎛️</span> 운전 조건 가속 열화 시뮬레이터
+              </div>
+              <button class="btn btn-sm" onclick="resetRulSim()">기본값</button>
+            </div>
+            <div class="panel-body">
+              <div class="slider-row">
+                <span class="slider-label">가동 부하율 (Spindle)</span>
+                <input type="range" min="50" max="140" value="100" class="slider-input" id="simLoadSlider" oninput="updateRulSimulation()">
+                <span class="slider-val" id="simLoadVal">100%</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">베어링 진동 RMS (G)</span>
+                <input type="range" min="0.5" max="3.5" step="0.1" value="1.8" class="slider-input" id="simVibSlider" oninput="updateRulSimulation()">
+                <span class="slider-val" id="simVibVal">1.8 G</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">일일 가동 시간</span>
+                <input type="range" min="8" max="24" value="16" class="slider-input" id="simHoursSlider" oninput="updateRulSimulation()">
+                <span class="slider-val" id="simHoursVal">16 h/d</span>
+              </div>
+
+              <div style="background: var(--bg-surface-elevated); padding: 12px; border-radius: 6px; margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; border: 1px solid var(--border-color);">
+                <div>
+                  <div style="font-size: 10px; color: var(--text-dim);">시뮬레이션 RUL</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #F59E0B; font-family: var(--font-mono);" id="simResultRul">142.5 h</div>
+                </div>
+                <div>
+                  <div style="font-size: 10px; color: var(--text-dim);">고장 도달 예정일</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #fff; font-family: var(--font-mono); margin-top: 4px;" id="simResultDate">2026-12-03</div>
+                </div>
+                <div>
+                  <div style="font-size: 10px; color: var(--text-dim);">정비 마진</div>
+                  <div style="font-size: 13px; font-weight: 700; color: var(--accent-cyan); font-family: var(--font-mono); margin-top: 4px;">D-12 여유</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 설비 건전성 랭킹 카드 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🏭</span> 주요 설비 건전성 랭킹
+              </div>
+              <span class="state-badge warn">4대 모니터링</span>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>설비명</th>
+                    <th>HI</th>
+                    <th>RUL</th>
+                    <th>조치 권고</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="selected">
+                    <td><strong>AFP-ROBOT-01</strong><br><small style="color: var(--text-dim);">C축 하모닉 감속기</small></td>
+                    <td><strong style="color: #F59E0B; font-family: var(--font-mono);">0.68</strong></td>
+                    <td style="font-family: var(--font-mono);">142 h</td>
+                    <td><span class="state-badge warn" style="font-size: 9px;"><span class="shape-icon">▲</span> 정비창구</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>AUTOCLAVE-AC-02</strong><br><small style="color: var(--text-dim);">진공 씰링 밸브</small></td>
+                    <td><strong style="color: #10B981; font-family: var(--font-mono);">0.89</strong></td>
+                    <td style="font-family: var(--font-mono);">820 h</td>
+                    <td><span class="state-badge pass" style="font-size: 9px;"><span class="shape-icon">●</span> 정상</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>CNC-5AXIS-M04</strong><br><small style="color: var(--text-dim);">주축 베어링</small></td>
+                    <td><strong style="color: #10B981; font-family: var(--font-mono);">0.94</strong></td>
+                    <td style="font-family: var(--font-mono);">1,450 h</td>
+                    <td><span class="state-badge pass" style="font-size: 9px;"><span class="shape-icon">●</span> 정상</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- CMMS 작업지시 생성 -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🛠️</span> SAP CMMS 예지정비 발주
+              </div>
+              <span class="state-badge pass" style="font-size: 9px;">연동 대기</span>
+            </div>
+            <div class="panel-body">
+              <div style="font-size: 11px; margin-bottom: 10px; color: var(--text-muted); line-height: 1.5;">
+                <strong>자동 생성 WO:</strong> AFP-ROBOT-01 C축 하모닉 드라이브 베어링(PART-HD-80B, 재고 2EA 가용) 정기 윈도우 교체 작업지시.
+              </div>
+              <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="sendWorkOrder()">
+                <span>📤</span> CMMS 작업지시 전송 (WO-2026-1115-09)
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 탭 E: SPC · AS9103 관리도 & 벨 커브 정규분포 히스토그램 -->
+    <!-- ================================================================= -->
+    <section id="tab-spc" class="tab-pane">
+      <div class="panel-card" style="margin-bottom: 16px;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>📐</span> AS9103 Key Characteristic (KC) 변동 관리 통계 패널
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select class="form-control" style="width: 250px; font-size: 11px;" id="kcSelector" onchange="changeKcMetric(this.value)">
+              <option value="KC-01">KC-01: 복합재 스킨 적층 총 두께 (6.35 ± 0.15 mm)</option>
+              <option value="KC-02">KC-02: 오토클레이브 경화 피크 온도 (180 ± 5 ℃)</option>
+              <option value="KC-03">KC-03: 패스너 홀 직경 공차 (7.92 ± 0.03 mm)</option>
+            </select>
+            <span class="state-badge pass"><span class="shape-icon">●</span> AS9103 우수 (Cpk ≥ 1.67)</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px;">
+            <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Cpk 공정능력지수</div>
+              <div style="font-size: 22px; font-weight: 800; color: #10B981; font-family: var(--font-mono);">1.74</div>
+              <div style="font-size: 9px; color: var(--text-muted);">기준 ≥ 1.67 달성</div>
+            </div>
+            <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Cp (잠재 공정능력)</div>
+              <div style="font-size: 22px; font-weight: 800; color: #fff; font-family: var(--font-mono);">1.88</div>
+              <div style="font-size: 9px; color: var(--text-muted);">산포 매우 우수</div>
+            </div>
+            <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">평균 μ / 목표값</div>
+              <div style="font-size: 18px; font-weight: 800; color: var(--accent-cyan); font-family: var(--font-mono);">6.348 mm</div>
+              <div style="font-size: 9px; color: var(--text-dim);">목표: 6.350 mm</div>
+            </div>
+            <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">표준편차 (σ)</div>
+              <div style="font-size: 18px; font-weight: 800; color: #fff; font-family: var(--font-mono);">0.026 mm</div>
+              <div style="font-size: 9px; color: var(--text-dim);">부분군 n=5</div>
+            </div>
+            <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">예상 불량률 (PPM)</div>
+              <div style="font-size: 18px; font-weight: 800; color: #10B981; font-family: var(--font-mono);">0.09 PPM</div>
+              <div style="font-size: 9px; color: var(--text-dim);">사실상 무결함</div>
+            </div>
+            <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+              <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">다변량 Hotelling T²</div>
+              <div style="font-size: 18px; font-weight: 800; color: #fff; font-family: var(--font-mono);">4.21</div>
+              <div style="font-size: 9px; color: var(--status-pass);">임계 11.4 미만</div>
+            </div>
+          </div>
+
+          <!-- X-bar 관리도 + 벨 커브 정규분포 히스토그램 병렬 배치 -->
+          <div class="grid-layout-eq" style="margin-bottom: 12px;">
+            <div style="background: #03060C; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; font-weight: 700;">
+                <span>X-bar 관리도 (30개 부분군 추이)</span>
+                <span style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 10px;">
+                  UCL: 6.43 | CL: 6.35 | LCL: 6.27
+                </span>
+              </div>
+              <canvas id="spcXbarCanvas" style="width: 100%; height: 200px; display: block;"></canvas>
+            </div>
+
+            <!-- 정규분포 벨 커브 히스토그램 (신규 시각화) -->
+            <div style="background: #03060C; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; font-weight: 700;">
+                <span>규격 대비 정규분포 히스토그램 (Bell Curve)</span>
+                <span style="color: #4ADE80; font-family: var(--font-mono); font-size: 10px;">
+                  LSL 6.20 ← [ 6.35 ] → USL 6.50
+                </span>
+              </div>
+              <canvas id="spcHistCanvas" style="width: 100%; height: 200px; display: block;"></canvas>
+            </div>
+          </div>
+
+          <!-- R 관리도 -->
+          <div style="background: #03060C; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; font-weight: 700;">
+              <span>R 관리도 (부분군 범위 Range)</span>
+              <span style="color: var(--text-dim); font-family: var(--font-mono); font-size: 10px;">
+                UCL(R): 0.124 | CL(R): 0.058
+              </span>
+            </div>
+            <canvas id="spcRCanvas" style="width: 100%; height: 110px; display: block;"></canvas>
+          </div>
+
+          <div style="margin-top: 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: var(--status-pass); font-weight: 700;">✔ Western Electric 4대 규칙 위반 없음 (STABLE)</span>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="injectSpcDrift()">시뮬레이션 드리프트 주입</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 탭 A: 적층 인시추(AFP) 8-Tow 멀티헤드 실시간 스트림 (극대화된 시각화) -->
+    <!-- ================================================================= -->
+    <section id="tab-insitu" class="tab-pane">
+      <div class="grid-layout-2">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- AFP 8개 가닥 토우(Tow 1~8) 실시간 적층 비주얼라이저 (신규 시각화) -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🧵</span> AFP 적층 롤러 8-Tow 테이프 개별 공급 모니터 (1/4" Tow)
+              </div>
+              <span class="live-dot"></span>
+            </div>
+            <div class="panel-body" style="padding: 10px;">
+              <canvas id="towVisualizerCanvas" style="width: 100%; height: 130px; background: #02050B; border: 1px solid var(--border-color); border-radius: 4px; display: block;"></canvas>
+              <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 6px;">
+                <span>Tow #1 (정상)</span>
+                <span>Tow #2 (정상)</span>
+                <span id="tow3Status" style="color: #4ADE80;">Tow #3 (정상)</span>
+                <span>Tow #4 (정상)</span>
+                <span>Tow #5 (정상)</span>
+                <span>Tow #6 (정상)</span>
+                <span>Tow #7 (정상)</span>
+                <span>Tow #8 (정상)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3계열 동기 센서 스트림 (온도, 프로파일, 속도) -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>⚡</span> 센서 3계열 10 Hz 실시간 스트리밍
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-sm" onclick="toggleStreamPause()" id="streamPauseBtn">일시정지</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div style="background: #040710; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 700; color: #FF5A7E; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                  <span>계열 1: 레이저 가열 닙 온도 (IR Nip Temp)</span>
+                  <span id="streamTempVal" style="font-family: var(--font-mono);">188.4 ℃ (목표 185 ± 5)</span>
+                </div>
+                <canvas id="streamTempCanvas" style="width: 100%; height: 75px; display: block;"></canvas>
+              </div>
+
+              <div style="background: #040710; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 700; color: #00F0FF; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                  <span>계열 2: 레이저 프로파일 표면 단차 (Laser Height)</span>
+                  <span id="streamHeightVal" style="font-family: var(--font-mono);">+0.04 mm</span>
+                </div>
+                <canvas id="streamLaserCanvas" style="width: 100%; height: 75px; display: block;"></canvas>
+              </div>
+
+              <div style="background: #040710; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px;">
+                <div style="font-size: 11px; font-weight: 700; color: #C084FC; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                  <span>계열 3: 로봇 헤드 이송 속도 (Feed Velocity)</span>
+                  <span id="streamSpeedVal" style="font-family: var(--font-mono);">850 mm/s</span>
+                </div>
+                <canvas id="streamSpeedCanvas" style="width: 100%; height: 60px; display: block;"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 선행 예측 HUD & 제어 권고 -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="panel-card" style="border-color: rgba(245, 158, 11, 0.4);">
+            <div class="panel-header" style="background: rgba(245, 158, 11, 0.1);">
+              <div class="panel-title" style="color: #FBBF24;">
+                <span>🚨</span> 결함 조기 선행 예측 (Lead Distance HUD)
+              </div>
+              <span class="state-badge warn">F1 ≥ 0.85</span>
+            </div>
+            <div class="panel-body">
+              <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">선행 예측 거리 (Lead Distance)</div>
+                  <div style="font-size: 32px; font-weight: 900; color: #F59E0B; font-family: var(--font-mono); text-shadow: 0 0 15px rgba(245, 158, 11, 0.5);" id="insituLeadDistVal">3.8 mm</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">롤러 닙 도달 4.4 ms 전방 감지</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; color: var(--text-dim);">결함 발생 확률</div>
+                  <div style="font-size: 28px; font-weight: 900; color: #FF5A7E; font-family: var(--font-mono);" id="insituProbVal">76.4%</div>
+                  <div style="font-size: 10px; color: var(--status-crit);">임계(70%) 초과</div>
+                </div>
+              </div>
+
+              <!-- 결함 분류 목록 -->
+              <div style="margin-top: 14px; background: var(--bg-surface-elevated); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700;">결함 유형 분류 결과</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="color: #fff;">Tow Bridging / Wrinkle (주름/브리징)</span>
+                  <strong style="color: #FF5A7E; font-family: var(--font-mono);">88.2%</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; color: var(--text-dim);">
+                  <span>Tow Twist (꼬임)</span>
+                  <span style="font-family: var(--font-mono);">8.4%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-dim);">
+                  <span>Gap / Overlap (갭/중첩)</span>
+                  <span style="font-family: var(--font-mono);">3.4%</span>
+                </div>
+              </div>
+
+              <!-- 제어계 피드백 권고 -->
+              <div style="margin-top: 14px; background: rgba(0, 240, 255, 0.08); border: 1px solid var(--accent-cyan); border-radius: 6px; padding: 12px;">
+                <div style="font-size: 12px; font-weight: 800; color: var(--accent-cyan); margin-bottom: 4px;">
+                  ⚙️ 제어계 피드백 권고 (Closed-loop Advisory)
+                </div>
+                <div style="font-size: 12px; color: var(--text-main); line-height: 1.5;">
+                  <strong>"비상 정지 금지"</strong>: 로봇 기계 응답(30ms) 지연으로 인한 스텝 단차 방지를 위해 <u>헤드 이송속도 40% 감속(340mm/s)</u> 및 <u>압축 롤러 가압 +15% 즉시 보정</u> 권고.
+                </div>
+              </div>
+
+              <!-- 테스트 결함 주입 -->
+              <div style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                <div style="font-size: 10px; color: var(--text-dim); margin-bottom: 8px;">실시간 결함 주입 테스트 (FR-A-07)</div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-sm btn-danger" style="flex: 1;" onclick="injectInsituDefect('twist')">
+                    🧪 Twist 주입
+                  </button>
+                  <button class="btn btn-sm btn-danger" style="flex: 1;" onclick="injectInsituDefect('wrinkle')">
+                    🧪 Bridging 주입
+                  </button>
+                  <button class="btn btn-sm" onclick="clearInsituDefect()">정상화</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 탭 D: 3D 공정 반응표면 시뮬레이터 (극대화된 시각화) -->
+    <!-- ================================================================= -->
+    <section id="tab-sim" class="tab-pane">
+      <div class="grid-layout-2">
+        <div class="panel-card">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span>🗺️</span> 3D 공정 반응표면(Response Surface) 지형도 (속도 vs 압력 vs 기공률)
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-sm" onclick="toggleSurface3dMode()" id="surfaceModeBtn">3D 서피스 뷰: ON</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div style="position: relative; background: #03060C; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; align-items: center;">
+              <canvas id="responseSurfaceCanvas" width="600" height="340" style="display: block; cursor: crosshair;"></canvas>
+            </div>
+
+            <div class="extrapolation-warning" id="extrapolationBanner" style="margin-top: 12px; display: none; background: rgba(255, 51, 102, 0.15); border: 1px solid var(--status-crit); border-radius: 6px; padding: 10px 14px; color: #FFA5BA; font-size: 12px;">
+              <span style="font-size: 18px; margin-right: 8px;">⚠️</span>
+              <div>
+                <strong>[적용 범위 외삽 경고 (Extrapolation Warning)]</strong><br>
+                입력하신 파라미터가 모델의 학습 데이터 도메인(속도 > 1.05m/s 또는 압력 > 1,050N)을 벗어났습니다. 신뢰도가 42.0%로 하향 조정됩니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 파라미터 제어 및 AI 최적 조합 -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span>🎯</span> 파라미터 제어 및 최적화
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="applyAiOptimalParam()">AI 최적점 적용</button>
+            </div>
+            <div class="panel-body">
+              <div class="slider-row">
+                <span class="slider-label">적층 이송 속도</span>
+                <input type="range" min="0.2" max="1.3" step="0.05" value="0.65" class="slider-input" id="simParamSpeed" oninput="updateSimResponse()">
+                <span class="slider-val" id="simParamSpeedVal">0.65 m/s</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">롤러 압축 압력</span>
+                <input type="range" min="200" max="1200" step="20" value="650" class="slider-input" id="simParamPressure" oninput="updateSimResponse()">
+                <span class="slider-val" id="simParamPressureVal">650 N</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">가열 목표 온도</span>
+                <input type="range" min="150" max="230" step="5" value="185" class="slider-input" id="simParamTemp" oninput="updateSimResponse()">
+                <span class="slider-val" id="simParamTempVal">185 ℃</span>
+              </div>
+
+              <div style="background: var(--bg-surface-elevated); padding: 14px; border-radius: 6px; margin-top: 16px; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 11px; color: var(--text-muted);">예상 기공률 (Porosity)</span>
+                  <strong style="font-size: 20px; font-family: var(--font-mono); color: #10B981;" id="simPorosityPred">0.58 %</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 11px; color: var(--text-muted);">규격 상한선 대비 여유</span>
+                  <span style="font-family: var(--font-mono); font-size: 12px; color: #4ADE80;" id="simMarginVal">+0.42 %p 여유</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 11px; color: var(--text-muted);">부품 성형 사이클 타임</span>
+                  <span style="font-family: var(--font-mono); font-size: 12px; color: #fff;" id="simCycleTimeVal">48.2 분 / 부품</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 11px; color: var(--text-muted);">예측 신뢰도</span>
+                  <span style="font-family: var(--font-mono); font-size: 12px; color: var(--accent-cyan);" id="simConfidenceVal">92.4% (신뢰 영역)</span>
+                </div>
+              </div>
+
+              <div style="margin-top: 16px;">
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="exportDoePlan()">
+                  <span>📥</span> DOE 실험 계획표 (CSV) 다운로드
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- 탭 F: 지식 검색 (RAG Assistant) -->
+    <!-- ================================================================= -->
+    <section id="tab-rag" class="tab-pane">
+      <div class="panel-card" style="max-width: 960px; margin: 0 auto;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>📚</span> 항공우주 규격 · 도면 · 8D 시정조치 지식 검색 (RAG)
+          </div>
+          <span class="state-badge pass">AS9100 / NADCAP 색인</span>
+        </div>
+        <div class="panel-body">
+          <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <input type="text" class="form-control" id="ragQueryInput" value="복합재 외판 초음파 감쇠율 규격 한계 및 층간 박리 발생 시 8D 개선 조치 이력" placeholder="규격 조항 또는 불량 유형 질의...">
+            <button class="btn btn-primary" onclick="executeRagSearch()">검색</button>
+          </div>
+
+          <div id="ragResultsContainer">
+            <div style="background: #040710; border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; margin-bottom: 12px;">
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-cyan); display: inline-block; margin-bottom: 4px;">
+                [규격] NADCAP AC7118 Rev.D — Section 5.4.2 NDT Ultrasonic Acceptance
+              </span>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+                "CFRP 복합재 구조물의 초음파 펄스-에코 C-scan 판정 시, 기준 시편(Reference Standard Flat Bottom Hole) 대비 신호 감쇠량이 <strong>-6.0 dB</strong> 이상 지속되는 영역은 박리(Delamination) 또는 고밀도 보이드로 간주하며 단면 크기 5.0 mm 초과 시 부적합(MRB 심의) 처리하여야 한다."
+              </div>
+            </div>
+
+            <div style="background: #040710; border: 1px solid var(--border-color); border-radius: 6px; padding: 14px;">
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-cyan); display: inline-block; margin-bottom: 4px;">
+                [과거 8D 보고서] 8D-2025-Q3-082 (동일 라인 WING-SPAR 층간 박리 시정조치)
+              </span>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+                "근본 원인: 적층 헤드 레이저 닙 온도 센서의 표면 반사율 오차로 인해 실제 적층 온도가 규격보다 12℃ 낮게 인가되어 수지 용융 불량 발생. 시정 조치: 2점 열화상 캘리브레이션 루틴 신설 및 인시추 닙 온도 인터록 도입 후 불량률 0% 달성."
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 하단 풋터 -->
+  <footer>
+    <div class="footer-left">
+      <span style="display: flex; align-items: center; gap: 6px;">
+        <span class="live-dot"></span> EDGE-GW-01 CONNECTED
+      </span>
+      <span>OPC-UA: 10Hz OK</span>
+      <span>INFERENCE: 18ms (V100 Server)</span>
+      <span>GATEWAY: ZERO-LOSS BUFFERED</span>
+    </div>
+    <div>
+      <span>AS9100D / NADCAP AUDIT TRAIL ENABLED</span> | 
+      <a href="javascript:void(0)" onclick="openAuditLogModal()" style="color: var(--accent-cyan); text-decoration: none;">감사 로그 전체 보기</a>
+    </div>
+  </footer>
+
+  <!-- ================================================================= -->
+  <!-- 모달 0: GitHub 계정 연동 모달 (신규 추가) -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="githubModal">
+    <div class="modal-box" style="max-width: 540px;">
+      <div class="modal-header">
+        <div style="font-weight: 700; font-size: 14px; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+          </svg>
+          <span>GitHub 계정 연동 및 저장소 동기화</span>
+        </div>
+        <button class="btn btn-sm" onclick="closeModal('githubModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="githubLoggedOutView">
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+            GitHub 계정을 연동하면 워크벤치의 품질 검사 보고서, 감사 로그, AI 모델 버전 및 공정 파라미터(DOE) 설정값을 원격 GitHub 저장소에 자동으로 커밋하거나 릴리스(Release) 아티팩트로 내보낼 수 있습니다.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">GitHub 사용자 이름 또는 Organization</label>
+            <input type="text" class="form-control" id="githubUsernameInput" value="aero-engineer" placeholder="예: your-github-id">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">연동할 GitHub 저장소 (Repository)</label>
+            <input type="text" class="form-control" id="githubRepoInput" value="aero-engineer/aero-q-manufacturing" placeholder="예: username/repo-name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Personal Access Token (PAT) 또는 OAuth 인증</label>
+            <input type="password" class="form-control" id="githubTokenInput" value="ghp_aero_mock_token_77a8b9c0d1e2" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            <small style="font-size: 10px; color: var(--text-dim); margin-top: 4px; display: block;">* 토큰 권한: <code>repo</code>, <code>workflow</code> (에어갭 환경에서는 사내 GitHub Enterprise Server 지원)</small>
+          </div>
+
+          <div style="margin-top: 18px;">
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px;" onclick="connectGithubAccount()">
+              <svg height="15" width="15" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+              </svg>
+              <span>GitHub 계정 연결 승인</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="githubLoggedInView" style="display: none;">
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: #1F2937; border: 2px solid var(--accent-cyan); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
+                AE
+              </div>
+              <div>
+                <div style="font-weight: 700; color: #fff; font-size: 13px;" id="ghProfileName">@aero-engineer</div>
+                <div style="font-size: 11px; color: var(--status-pass); font-family: var(--font-mono);">✔ Connected (OAuth Token Valid)</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="disconnectGithubAccount()">연결 해제</button>
+          </div>
+
+          <table class="data-table" style="margin-bottom: 14px;">
+            <tr>
+              <th style="width: 130px;">연동 저장소</th>
+              <td><code id="ghRepoDisplay">aero-engineer/aero-q-manufacturing</code></td>
+            </tr>
+            <tr>
+              <th>브랜치</th>
+              <td><code>main</code> (HEAD: <code>7c4a1b8</code>)</td>
+            </tr>
+            <tr>
+              <th>최근 커밋</th>
+              <td>"feat(workbench): add 3D fuselage section and FFT analyzer"</td>
+            </tr>
+            <tr>
+              <th>동기화 상태</th>
+              <td><span style="color: #4ADE80;">Up to date (로컬 변경 0건)</span></td>
+            </tr>
+          </table>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button class="btn btn-sm" onclick="syncGithubExport('audit')">
+              <span>📤</span> 감사 로그 커밋 푸시
+            </button>
+            <button class="btn btn-sm" onclick="syncGithubExport('prd')">
+              <span>📤</span> PRD v1.0 릴리스 태그
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('githubModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 모달 1: 3D 디지털 트윈 팝업 -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="twin3dModal">
+    <div class="modal-box" style="max-width: 860px;">
+      <div class="modal-header">
+        <div style="font-weight: 700; font-size: 14px; color: var(--accent-cyan);">🛰️ 동체 Section 47 3D 디지털 트윈 검사 맵</div>
+        <button class="btn btn-sm" onclick="closeModal('twin3dModal')">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 12px;">
+        <div class="canvas-3d-box" style="height: 400px;" id="twinModal3dContainer">
+          <canvas id="twinModalCanvas" width="800" height="400" style="width: 100%; height: 400px; display: block;"></canvas>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px; color: var(--text-dim); display: flex; justify-content: space-between;">
+          <span>3D 표면 좌표: X: 182mm, Y: 94mm, Z: 3.12mm (결함 #1 계면 투영)</span>
+          <span style="color: var(--accent-cyan);">마우스 드래그로 회전 가능</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('twin3dModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 모달 2: 모델 레지스트리 (FR-C-03) -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="modelRegistryModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div style="font-weight: 700; font-size: 14px; color: var(--accent-cyan);">📋 모델 레지스트리 (Model Card v2.4.1)</div>
+        <button class="btn btn-sm" onclick="closeModal('modelRegistryModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <table class="data-table" style="margin-bottom: 14px;">
+          <tr>
+            <th style="width: 140px;">모델 식별자</th>
+            <td><code>AERO-VISION-NDI-v2.4.1</code> (Active Production)</td>
+          </tr>
+          <tr>
+            <th>알고리즘 구조</th>
+            <td>One-Class Convolutional Autoencoder + U-Net Mask Refiner</td>
+          </tr>
+          <tr>
+            <th>학습 데이터셋</th>
+            <td>CFRP T800 정상 C-scan 4,200건 + 인증 시편 인공결함 180건</td>
+          </tr>
+          <tr>
+            <th>검증 성능</th>
+            <td>Recall: <strong style="color: #4ADE80;">0.962</strong> | Precision: <strong>0.884</strong> | Brier Score: <strong>0.048</strong></td>
+          </tr>
+          <tr>
+            <th>드리프트 상태</th>
+            <td>PSI: <strong style="color: #4ADE80;">0.082</strong> (0.2 미만 안정)</td>
+          </tr>
+          <tr>
+            <th>승인자 및 인증</th>
+            <td>품질보증 이사 김항공 (서명 완료) / AS9100 변경관리 #MOC-2026-044</td>
+          </tr>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('modelRegistryModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 모달 3: 감사 로그 (FR-C-04) -->
+  <!-- ================================================================= -->
+  <div class="modal-overlay" id="auditLogModal">
+    <div class="modal-box" style="max-width: 840px;">
+      <div class="modal-header">
+        <div style="font-weight: 700; font-size: 14px; color: var(--accent-cyan);">📜 불변 감사 로그 (Immutable Audit Trail)</div>
+        <button class="btn btn-sm" onclick="closeModal('auditLogModal')">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 0; max-height: 400px; overflow-y: auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>일시 (UTC)</th>
+              <th>사용자</th>
+              <th>이벤트</th>
+              <th>대상 부품</th>
+              <th>모델</th>
+              <th>상세 내용</th>
+            </tr>
+          </thead>
+          <tbody id="auditLogTbody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <span style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);">SHA-256 체인 무결성: VERIFIED ✔</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary btn-sm" onclick="downloadAuditLogCsv()">CSV 다운로드</button>
+          <button class="btn btn-sm" onclick="closeModal('auditLogModal')">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 완전 내장 스크립트 (외부 라이브러리 의존성 0, 100% 자립형 60FPS) -->
+  <script>
+    /* =================================================================
+       1. 글로벌 상태 및 오디오 신디사이저 (Web Audio API)
+       ================================================================= */
+    const STATE = {
+      audioFx: true,
+      currentPart: 'FUSELAGE-SEC47-L08',
+      selectedDefectIndex: 0,
+      showAiBoxes: true,
+      radarSweep: true,
+      showLoupe: false,
+      colorMap: 'jet',
+      streamPaused: false,
+      isTestFaultInjected: false,
+      surface3dMode: true,
+      camera3d: { yaw: 0.5, pitch: 0.35, dist: 280 },
+      isDragging3d: false,
+      lastMouseX: 0, lastMouseY: 0,
+      auditLogs: [
+        { time: '2026-11-15 14:10:22', user: 'INSP-7704', action: 'NDI_SCAN_LOAD', part: 'FUSELAGE-SEC47-L08', model: 'v2.4.1', detail: 'C-scan DICONDE 인입 (결함후보 2건 자동추출)' },
+        { time: '2026-11-15 13:42:01', user: 'ENG-KANG', action: 'RUL_ALERT_ACK', part: 'AFP-ROBOT-01', model: 'v1.8.0', detail: '정비창구 권고 확인 (WO 초안 생성)' },
+        { time: '2026-11-15 11:20:15', user: 'QA-AUDITOR', action: 'SPC_REPORT_EXPORT', part: 'KC-01-THICKNESS', model: '--', detail: 'AS9103 관리도 리포트 출력' }
+      ],
+      defects: [
+        { id: 1, type: '박리(Delamination)', x: 182, y: 94, w: 26, h: 22, dia: 6.2, conf: 94.8, depth: 3.12 },
+        { id: 2, type: '기공(Porosity)', x: 340, y: 165, w: 14, h: 12, dia: 2.8, conf: 88.2, depth: 1.84 }
+      ]
+    };
+
+    // 하이테크 Web Audio 신디사이저
+    let audioCtx = null;
+    function playBeep(freq = 600, duration = 0.06, type = 'sine') {
+      if (!STATE.audioFx) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function toggleAudioFx() {
+      STATE.audioFx = !STATE.audioFx;
+      document.getElementById('audioFxIcon').textContent = STATE.audioFx ? '🔊' : '🔇';
+      document.getElementById('audioFxLabel').textContent = `사운드 효과: ${STATE.audioFx ? 'ON' : 'OFF'}`;
+      if (STATE.audioFx) playBeep(880, 0.1);
+    }
+
+    /* =================================================================
+       2. 탭 전환
+       ================================================================= */
+    function switchTab(tabId) {
+      playBeep(700, 0.05);
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) targetPane.classList.add('active');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('onclick').includes(tabId)) btn.classList.add('active');
+      });
+
+      if (tabId === 'tab-ndi') { drawCScan(); drawBScan(); }
+      else if (tabId === 'tab-rul') { drawRulChart(); }
+      else if (tabId === 'tab-spc') { drawSpcCharts(); }
+      else if (tabId === 'tab-sim') { drawResponseSurface(); }
+    }
+
+    /* =================================================================
+       3. 모듈 B: C-scan / B-scan / A-scan 캔버스 렌더러 & 돋보기
+       ================================================================= */
+    const cscanCanvas = document.getElementById('cscanCanvas');
+    const cscanCtx = cscanCanvas.getContext('2d');
+    const bscanCanvas = document.getElementById('bscanCanvas');
+    const bscanCtx = bscanCanvas.getContext('2d');
+    const ascanCanvas = document.getElementById('ascanCanvas');
+    const ascanCtx = ascanCanvas.getContext('2d');
+    const loupeOverlay = document.getElementById('loupeOverlay');
+    const loupeCanvas = document.getElementById('loupeCanvas');
+    const loupeCtx = loupeCanvas.getContext('2d');
+
+    const scanW = 420, scanH = 210;
+    const scanData = new Float32Array(scanW * scanH);
+    let radarSweepX = 0;
+
+    function initSyntheticScanData() {
+      for (let y = 0; y < scanH; y++) {
+        for (let x = 0; x < scanW; x++) {
+          let val = Math.sin(x * 0.04) * Math.cos(y * 0.05) * 0.09 + (Math.random() - 0.5) * 0.05;
+          let d1 = Math.hypot(x - 182, y - 94);
+          if (d1 < 15) val += (15 - d1) * 0.07;
+          let d2 = Math.hypot(x - 340, y - 165);
+          if (d2 < 9) val += (9 - d2) * 0.08;
+          scanData[y * scanW + x] = Math.min(1.0, Math.max(0.0, 0.2 + val));
+        }
+      }
+    }
+    initSyntheticScanData();
+
+    function getColorMapRgb(val, type) {
+      if (type === 'jet') {
+        let r = Math.max(0, Math.min(1, 1.5 - Math.abs(val * 4 - 3)));
+        let g = Math.max(0, Math.min(1, 1.5 - Math.abs(val * 4 - 2)));
+        let b = Math.max(0, Math.min(1, 1.5 - Math.abs(val * 4 - 1)));
+        return [r * 255, g * 255, b * 255];
+      } else if (type === 'turbo') {
+        let r = Math.sin(val * Math.PI * 0.9) * 255;
+        let g = Math.sin(val * Math.PI * 1.1) * 220;
+        let b = Math.cos(val * Math.PI * 0.7) * 240;
+        return [Math.max(0, r), Math.max(0, g), Math.max(0, b)];
+      } else if (type === 'viridis') {
+        let r = Math.min(255, val * 220);
+        let g = Math.min(255, Math.sin(val * Math.PI) * 240);
+        let b = Math.min(255, (1 - val) * 200 + 40);
+        return [r, g, b];
+      } else {
+        let g = Math.round(val * 255);
+        return [g, g, g];
+      }
+    }
+
+    function drawCScan() {
+      const imgData = cscanCtx.createImageData(scanW, scanH);
+      for (let i = 0; i < scanData.length; i++) {
+        let [r, g, b] = getColorMapRgb(scanData[i], STATE.colorMap);
+        imgData.data[i * 4] = r;
+        imgData.data[i * 4 + 1] = g;
+        imgData.data[i * 4 + 2] = b;
+        imgData.data[i * 4 + 3] = 255;
+      }
+
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = scanW; offCanvas.height = scanH;
+      offCanvas.getContext('2d').putImageData(imgData, 0, 0);
+
+      cscanCtx.clearRect(0, 0, cscanCanvas.width, cscanCanvas.height);
+      cscanCtx.drawImage(offCanvas, 0, 0, cscanCanvas.width, cscanCanvas.height);
+
+      const scaleX = cscanCanvas.width / scanW;
+      const scaleY = cscanCanvas.height / scanH;
+
+      // 레이더 스윕 라인 (Radar Sweep Line)
+      if (STATE.radarSweep) {
+        radarSweepX = (radarSweepX + 2.5) % cscanCanvas.width;
+        cscanCtx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+        cscanCtx.lineWidth = 1.5;
+        cscanCtx.beginPath();
+        cscanCtx.moveTo(radarSweepX, 0);
+        cscanCtx.lineTo(radarSweepX, cscanCanvas.height);
+        cscanCtx.stroke();
+
+        let sweepGrad = cscanCtx.createLinearGradient(radarSweepX - 40, 0, radarSweepX, 0);
+        sweepGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+        sweepGrad.addColorStop(1, 'rgba(0, 240, 255, 0.18)');
+        cscanCtx.fillStyle = sweepGrad;
+        cscanCtx.fillRect(radarSweepX - 40, 0, 40, cscanCanvas.height);
+      }
+
+      // AI 결함 바운딩박스 & 펄싱 링
+      if (STATE.showAiBoxes) {
+        STATE.defects.forEach((d, idx) => {
+          const isSelected = (idx === STATE.selectedDefectIndex);
+          const bx = (d.x - d.w / 2) * scaleX;
+          const by = (d.y - d.h / 2) * scaleY;
+          const bw = d.w * scaleX;
+          const bh = d.h * scaleY;
+
+          cscanCtx.strokeStyle = isSelected ? '#00F0FF' : '#FF5A7E';
+          cscanCtx.lineWidth = isSelected ? 2.5 : 1.5;
+          cscanCtx.strokeRect(bx, by, bw, bh);
+
+          if (isSelected) {
+            cscanCtx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+            cscanCtx.strokeRect(bx - 3, by - 3, bw + 6, bh + 6);
+          }
+
+          cscanCtx.fillStyle = isSelected ? '#0284C7' : 'rgba(255, 51, 102, 0.85)';
+          cscanCtx.fillRect(bx, by - 16, bw, 16);
+          cscanCtx.fillStyle = '#fff';
+          cscanCtx.font = 'bold 10px monospace';
+          cscanCtx.fillText(`#${d.id} ${d.conf}%`, bx + 4, by - 4);
+        });
+      }
+    }
+
+    // B-scan 단면 프로파일
+    function drawBScan() {
+      const w = bscanCanvas.width = bscanCanvas.offsetWidth;
+      const h = bscanCanvas.height = bscanCanvas.offsetHeight;
+      bscanCtx.clearRect(0, 0, w, h);
+
+      const selDefect = STATE.defects[STATE.selectedDefectIndex];
+      document.getElementById('bscanSelectedId').textContent = selDefect.id;
+
+      // 그리드
+      bscanCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      bscanCtx.lineWidth = 1;
+      for (let y = 15; y < h; y += 25) {
+        bscanCtx.beginPath();
+        bscanCtx.moveTo(0, y); bscanCtx.lineTo(w, y);
+        bscanCtx.stroke();
+      }
+
+      // 표면 및 배면
+      bscanCtx.strokeStyle = '#00F0FF';
+      bscanCtx.lineWidth = 2;
+      bscanCtx.beginPath(); bscanCtx.moveTo(0, 15); bscanCtx.lineTo(w, 15); bscanCtx.stroke();
+
+      bscanCtx.strokeStyle = '#52637A';
+      bscanCtx.beginPath(); bscanCtx.moveTo(0, h - 15); bscanCtx.lineTo(w, h - 15); bscanCtx.stroke();
+
+      // 결함 반사층
+      const defectY = 15 + (selDefect.depth / 6.35) * (h - 30);
+      const cx = w / 2;
+
+      bscanCtx.fillStyle = 'rgba(255, 51, 102, 0.35)';
+      bscanCtx.fillRect(cx - 50, defectY - 6, 100, 12);
+
+      bscanCtx.strokeStyle = '#FF3366';
+      bscanCtx.lineWidth = 2;
+      bscanCtx.beginPath();
+      for (let x = cx - 70; x <= cx + 70; x += 3) {
+        let env = Math.exp(-Math.pow((x - cx) / 25, 2));
+        let wave = Math.sin((x - cx) * 0.45) * 16 * env;
+        if (x === cx - 70) bscanCtx.moveTo(x, defectY + wave);
+        else bscanCtx.lineTo(x, defectY + wave);
+      }
+      bscanCtx.stroke();
+
+      bscanCtx.fillStyle = '#FFA5BA';
+      bscanCtx.font = '10px monospace';
+      bscanCtx.fillText(`[박리 에코] 깊이: ${selDefect.depth} mm (Ply 14)`, cx - 60, defectY - 10);
+    }
+
+    // A-scan RF 고주파 오실로스코프 파형 렌더러
+    let ascanPhase = 0;
+    function drawAScan() {
+      const w = ascanCanvas.width = ascanCanvas.offsetWidth;
+      const h = ascanCanvas.height = ascanCanvas.offsetHeight;
+      ascanCtx.clearRect(0, 0, w, h);
+
+      ascanPhase += 0.08;
+      const cy = h / 2;
+
+      ascanCtx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+      ascanCtx.lineWidth = 1;
+      ascanCtx.beginPath();
+      ascanCtx.moveTo(0, cy); ascanCtx.lineTo(w, cy);
+      ascanCtx.stroke();
+
+      ascanCtx.strokeStyle = '#00F0FF';
+      ascanCtx.lineWidth = 1.8;
+      ascanCtx.beginPath();
+
+      const selDefect = STATE.defects[STATE.selectedDefectIndex];
+      const peakX = w * (selDefect.depth / 6.35);
+
+      for (let x = 0; x < w; x += 2) {
+        let noise = (Math.random() - 0.5) * 2;
+        let envInitial = Math.exp(-Math.pow(x / 18, 2)) * 35;
+        let envDefect = Math.exp(-Math.pow((x - peakX) / 22, 2)) * 42;
+        let envBack = Math.exp(-Math.pow((x - (w - 20)) / 20, 2)) * 18;
+
+        let wave = Math.sin(x * 0.6 + ascanPhase) * (envInitial + envDefect + envBack) + noise;
+        let y = cy + wave;
+        if (x === 0) ascanCtx.moveTo(x, y);
+        else ascanCtx.lineTo(x, y);
+      }
+      ascanCtx.stroke();
+
+      // 결함 피크 마커
+      ascanCtx.fillStyle = '#FF3366';
+      ascanCtx.beginPath();
+      ascanCtx.arc(peakX, cy - 35, 4, 0, Math.PI * 2);
+      ascanCtx.fill();
+    }
+
+    // 마우스 루페(돋보기) 인터랙션
+    cscanCanvas.addEventListener('mousemove', (e) => {
+      const rect = cscanCanvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      const scaleX = scanW / cscanCanvas.width;
+      const scaleY = scanH / cscanCanvas.height;
+      const dataX = Math.round(mx * scaleX);
+      const dataY = Math.round(my * scaleY);
+
+      if (STATE.showLoupe) {
+        loupeOverlay.style.display = 'block';
+        loupeOverlay.style.left = `${mx - 60}px`;
+        loupeOverlay.style.top = `${my - 60}px`;
+
+        loupeCtx.clearRect(0, 0, 120, 120);
+        loupeCtx.drawImage(cscanCanvas, mx - 25, my - 25, 50, 50, 0, 0, 120, 120);
+        loupeCtx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+        loupeCtx.strokeRect(55, 55, 10, 10);
+      }
+
+      document.getElementById('cscanCoords').textContent = 
+        `X: ${(dataX * 0.5).toFixed(1)} mm | Y: ${(dataY * 0.5).toFixed(1)} mm | Amp: -${(12 + Math.random() * 4).toFixed(1)} dB | 실시간 탐침 중`;
+    });
+
+    cscanCanvas.addEventListener('mouseleave', () => {
+      loupeOverlay.style.display = 'none';
+    });
+
+    function toggleLoupe() {
+      STATE.showLoupe = !STATE.showLoupe;
+      document.getElementById('loupeToggleBtn').classList.toggle('btn-primary', STATE.showLoupe);
+      playBeep(STATE.showLoupe ? 900 : 500, 0.05);
+    }
+
+    function toggleRadarSweep() {
+      STATE.radarSweep = !STATE.radarSweep;
+      document.getElementById('radarSweepBtn').textContent = `레이더 스캔: ${STATE.radarSweep ? 'ON' : 'OFF'}`;
+    }
+
+    function toggleOverlayBoxes() {
+      STATE.showAiBoxes = !STATE.showAiBoxes;
+      document.getElementById('overlayToggleBtn').textContent = `AI 바운딩박스: ${STATE.showAiBoxes ? 'ON' : 'OFF'}`;
+      drawCScan();
+    }
+
+    function changeColorMap(map) {
+      STATE.colorMap = map;
+      drawCScan();
+      playBeep(650, 0.05);
+    }
+
+    function selectDefect(idx) {
+      STATE.selectedDefectIndex = idx;
+      playBeep(800, 0.06);
+      document.querySelectorAll('#defectCandidateTable tbody tr').forEach((r, i) => {
+        r.classList.toggle('selected', i === idx);
+      });
+      drawCScan();
+      drawBScan();
+      drawAScan();
+    }
+
+    function markFalsePositive(idx) {
+      if (confirm(`후보 #${STATE.defects[idx].id} 건을 오탐(False Positive)으로 분류하여 재학습 데이터셋으로 전송하시겠습니까?`)) {
+        addAuditLog('DEFECT_FEEDBACK', STATE.currentPart, `후보 #${STATE.defects[idx].id} 정상 피드백(오탐) 전송`);
+        alert('오탐 피드백이 모델 재학습 큐(Dataset v2.4-FP)에 등록되었습니다.');
+      }
+    }
+
+    function setVerdict(type) {
+      playBeep(type === 'REJECT' ? 400 : 750, 0.08);
+      document.getElementById('verdictAcceptBtn').style.borderColor = (type === 'ACCEPT' ? '#10B981' : 'var(--border-color)');
+      document.getElementById('verdictCondBtn').style.borderColor = (type === 'CONDITIONAL' ? '#F59E0B' : 'var(--border-color)');
+      document.getElementById('verdictRejectBtn').style.borderColor = (type === 'REJECT' ? '#FF3366' : 'var(--border-color)');
+    }
+
+    function submitFinalVerdict() {
+      const reason = document.getElementById('dispositionReasonCode').value;
+      const comment = document.getElementById('inspectorComment').value;
+      if (!comment.trim()) {
+        alert('검사원 기술 소견을 입력해주십시오.');
+        return;
+      }
+      playBeep(950, 0.15);
+      if (confirm(`[2단계 전자 서명 확인]\n부품: ${STATE.currentPart}\n사유: ${reason}\n\nQMS로 최종 판정 서명을 전송하시겠습니까?`)) {
+        addAuditLog('NDI_VERDICT_SIGN', STATE.currentPart, `판정: 불합격 (코드: ${reason}) / 소견: ${comment.substring(0, 30)}...`);
+        alert('판정 서명이 QMS에 전송되었으며, 감사 로그에 등록되었습니다.');
+      }
+    }
+
+    /* =================================================================
+       4. 3D 복합재 파트 (Fuselage Section 47) 렌더러 (순수 Canvas 3D)
+       ================================================================= */
+    const part3dCanvas = document.getElementById('part3dCanvas');
+    const part3dCtx = part3dCanvas.getContext('2d');
+    const part3dContainer = document.getElementById('part3dContainer');
+
+    let part3dPoints = [];
+    let part3dLines = [];
+
+    function init3dFuselageGeometry() {
+      part3dPoints = [];
+      part3dLines = [];
+      const rings = 8, segs = 16, radius = 55, length = 180;
+
+      for (let r = 0; r < rings; r++) {
+        let z = -length / 2 + (r / (rings - 1)) * length;
+        for (let s = 0; s < segs; s++) {
+          let theta = (s / segs) * Math.PI * 2;
+          let x = Math.cos(theta) * radius;
+          let y = Math.sin(theta) * radius * 0.75;
+          part3dPoints.push({ x, y, z });
+        }
+      }
+
+      for (let r = 0; r < rings; r++) {
+        for (let s = 0; s < segs; s++) {
+          let cur = r * segs + s;
+          let nextS = r * segs + ((s + 1) % segs);
+          part3dLines.push([cur, nextS]);
+          if (r < rings - 1) {
+            let nextR = (r + 1) * segs + s;
+            part3dLines.push([cur, nextR]);
+          }
+        }
+      }
+    }
+    init3dFuselageGeometry();
+
+    function render3dPart() {
+      const w = part3dCanvas.width;
+      const h = part3dCanvas.height;
+      part3dCtx.clearRect(0, 0, w, h);
+
+      const cx = w / 2, cy = h / 2;
+      const cosY = Math.cos(STATE.camera3d.yaw), sinY = Math.sin(STATE.camera3d.yaw);
+      const cosP = Math.cos(STATE.camera3d.pitch), sinP = Math.sin(STATE.camera3d.pitch);
+
+      const projected = part3dPoints.map(p => {
+        let x1 = p.x * cosY - p.z * sinY;
+        let z1 = p.x * sinY + p.z * cosY;
+        let y1 = p.y * cosP - z1 * sinP;
+        let z2 = p.y * sinP + z1 * cosP + STATE.camera3d.dist;
+        let scale = 260 / (z2 > 10 ? z2 : 10);
+        return { px: cx + x1 * scale, py: cy + y1 * scale, depth: z2 };
+      });
+
+      // 와이어프레임 렌더
+      part3dCtx.strokeStyle = 'rgba(0, 240, 255, 0.22)';
+      part3dCtx.lineWidth = 1;
+      part3dLines.forEach(([i, j]) => {
+        let p1 = projected[i], p2 = projected[j];
+        part3dCtx.beginPath();
+        part3dCtx.moveTo(p1.px, p1.py);
+        part3dCtx.lineTo(p2.px, p2.py);
+        part3dCtx.stroke();
+      });
+
+      // 결함 위치 3D 네온 마커 펄싱 투영
+      const defect1P = { x: 22, y: -26, z: -15 };
+      let dx1 = defect1P.x * cosY - defect1P.z * sinY;
+      let dz1 = defect1P.x * sinY + defect1P.z * cosY;
+      let dy1 = defect1P.y * cosP - dz1 * sinP;
+      let dz2 = defect1P.y * sinP + dz1 * cosP + STATE.camera3d.dist;
+      let dscale = 260 / dz2;
+      let dpx = cx + dx1 * dscale, dpy = cy + dy1 * dscale;
+
+      let pulse = (Math.sin(Date.now() * 0.006) + 1) * 3;
+      part3dCtx.fillStyle = '#FF3366';
+      part3dCtx.beginPath();
+      part3dCtx.arc(dpx, dpy, 4 + pulse, 0, Math.PI * 2);
+      part3dCtx.fill();
+
+      part3dCtx.strokeStyle = '#00F0FF';
+      part3dCtx.strokeRect(dpx - 14, dpy - 14, 28, 28);
+      part3dCtx.fillStyle = '#fff';
+      part3dCtx.font = 'bold 9px monospace';
+      part3dCtx.fillText('★ 결함 #1 (박리)', dpx + 16, dpy + 3);
+    }
+
+    // 마우스 3D 회전 제어
+    part3dContainer.addEventListener('mousedown', (e) => {
+      STATE.isDragging3d = true;
+      STATE.lastMouseX = e.clientX;
+      STATE.lastMouseY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => { STATE.isDragging3d = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!STATE.isDragging3d) return;
+      let dx = e.clientX - STATE.lastMouseX;
+      let dy = e.clientY - STATE.lastMouseY;
+      STATE.camera3d.yaw += dx * 0.008;
+      STATE.camera3d.pitch += dy * 0.008;
+      STATE.lastMouseX = e.clientX;
+      STATE.lastMouseY = e.clientY;
+      render3dPart();
+    });
+    part3dContainer.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      STATE.camera3d.dist += e.deltaY * 0.2;
+      STATE.camera3d.dist = Math.max(140, Math.min(480, STATE.camera3d.dist));
+      render3dPart();
+    });
+
+    function reset3dCamera() {
+      STATE.camera3d = { yaw: 0.5, pitch: 0.35, dist: 280 };
+      render3dPart();
+      playBeep(700, 0.05);
+    }
+
+    /* =================================================================
+       5. 모듈 C: RUL 몬테카를로 앙상블 & FFT 스펙트럼 캔버스
+       ================================================================= */
+    const rulCanvas = document.getElementById('rulChartCanvas');
+    const rulCtx = rulCanvas.getContext('2d');
+    const fftCanvas = document.getElementById('fftCanvas');
+    const fftCtx = fftCanvas.getContext('2d');
+
+    function drawRulChart() {
+      const w = rulCanvas.width = rulCanvas.offsetWidth;
+      const h = rulCanvas.height = rulCanvas.offsetHeight;
+      rulCtx.clearRect(0, 0, w, h);
+
+      const padL = 45, padR = 25, padT = 25, padB = 30;
+      const gw = w - padL - padR, gh = h - padT - padB;
+
+      // 축 눈금
+      rulCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      rulCtx.lineWidth = 1;
+      rulCtx.font = '10px monospace';
+      rulCtx.fillStyle = '#52637A';
+
+      for (let i = 0; i <= 5; i++) {
+        let val = (1.0 - i * 0.2).toFixed(1);
+        let y = padT + i * (gh / 5);
+        rulCtx.beginPath();
+        rulCtx.moveTo(padL, y); rulCtx.lineTo(w - padR, y);
+        rulCtx.stroke();
+        rulCtx.fillText(val, 10, y + 4);
+      }
+
+      // 정지 한계선 (HI 0.40)
+      let critY = padT + (1.0 - 0.4) * gh;
+      rulCtx.strokeStyle = 'rgba(255, 51, 102, 0.7)';
+      rulCtx.setLineDash([4, 4]);
+      rulCtx.beginPath();
+      rulCtx.moveTo(padL, critY); rulCtx.lineTo(w - padR, critY);
+      rulCtx.stroke();
+      rulCtx.setLineDash([]);
+      rulCtx.fillStyle = '#FF3366';
+      rulCtx.fillText('위험 정지 한계 (0.40)', w - 140, critY - 6);
+
+      const nowX = padL + gw * 0.55;
+
+      // 과거 20일 관측 이력
+      rulCtx.strokeStyle = '#00F0FF';
+      rulCtx.lineWidth = 2.5;
+      rulCtx.beginPath();
+      for (let i = 0; i <= 20; i++) {
+        let x = padL + (i / 20) * (nowX - padL);
+        let t = i / 20;
+        let hiVal = 0.98 - 0.30 * Math.pow(t, 1.4) + Math.sin(i) * 0.015;
+        let y = padT + (1.0 - hiVal) * gh;
+        if (i === 0) rulCtx.moveTo(x, y);
+        else rulCtx.lineTo(x, y);
+      }
+      rulCtx.stroke();
+
+      // 미래 몬테카를로 50개 확률적 열화 궤적 (Ensemble Paths)
+      const futureW = (w - padR) - nowX;
+      rulCtx.lineWidth = 1;
+      for (let m = 0; m < 35; m++) {
+        rulCtx.strokeStyle = 'rgba(0, 240, 255, 0.07)';
+        rulCtx.beginPath();
+        rulCtx.moveTo(nowX, padT + (1.0 - 0.68) * gh);
+        let randSlope = 0.33 + (m - 17) * 0.007;
+        for (let i = 1; i <= 15; i++) {
+          let x = nowX + (i / 15) * futureW;
+          let t = i / 15;
+          let hi = 0.68 - randSlope * t + Math.sin(m * i) * 0.02;
+          let y = padT + (1.0 - hi) * gh;
+          rulCtx.lineTo(x, y);
+        }
+        rulCtx.stroke();
+      }
+
+      // 90% 신뢰대역 음영
+      rulCtx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+      rulCtx.beginPath();
+      rulCtx.moveTo(nowX, padT + (1.0 - 0.68) * gh);
+      for (let i = 0; i <= 15; i++) {
+        let x = nowX + (i / 15) * futureW;
+        let t = i / 15;
+        let hiUpper = 0.68 - 0.26 * t + 0.05 * Math.sqrt(t);
+        rulCtx.lineTo(x, padT + (1.0 - hiUpper) * gh);
+      }
+      for (let i = 15; i >= 0; i--) {
+        let x = nowX + (i / 15) * futureW;
+        let t = i / 15;
+        let hiLower = 0.68 - 0.40 * t - 0.06 * Math.sqrt(t);
+        rulCtx.lineTo(x, padT + (1.0 - hiLower) * gh);
+      }
+      rulCtx.closePath();
+      rulCtx.fill();
+
+      // 미래 중앙 예측선
+      rulCtx.strokeStyle = '#F59E0B';
+      rulCtx.lineWidth = 2;
+      rulCtx.setLineDash([5, 4]);
+      rulCtx.beginPath();
+      rulCtx.moveTo(nowX, padT + (1.0 - 0.68) * gh);
+      for (let i = 1; i <= 15; i++) {
+        let x = nowX + (i / 15) * futureW;
+        let t = i / 15;
+        let y = padT + (1.0 - (0.68 - 0.33 * t)) * gh;
+        rulCtx.lineTo(x, y);
+      }
+      rulCtx.stroke();
+      rulCtx.setLineDash([]);
+    }
+
+    // 베어링 FFT 스펙트럼 캔버스
+    function drawFftSpectrum() {
+      const w = fftCanvas.width = fftCanvas.offsetWidth;
+      const h = fftCanvas.height = fftCanvas.offsetHeight;
+      fftCtx.clearRect(0, 0, w, h);
+
+      fftCtx.strokeStyle = '#3B82F6';
+      fftCtx.lineWidth = 1.4;
+      fftCtx.beginPath();
+
+      const numBins = 150;
+      for (let i = 0; i < numBins; i++) {
+        let freq = (i / numBins) * 2000;
+        let x = (i / numBins) * w;
+        let amp = 8 + Math.random() * 5;
+
+        // 1X 회전 주파수 (30 Hz)
+        if (Math.abs(freq - 30) < 15) amp += 40;
+        // 2X (60 Hz)
+        if (Math.abs(freq - 60) < 15) amp += 24;
+        // BPFI 내륜결함 (162 Hz)
+        if (Math.abs(freq - 162) < 20) amp += 75;
+
+        let y = h - (amp / 100) * (h - 20) - 10;
+        if (i === 0) fftCtx.moveTo(x, y);
+        else fftCtx.lineTo(x, y);
+      }
+      fftCtx.stroke();
+
+      // BPFI 결함 핀 마커
+      let bpfiX = (162 / 2000) * w;
+      fftCtx.fillStyle = '#FF3366';
+      fftCtx.beginPath();
+      fftCtx.arc(bpfiX, 22, 5, 0, Math.PI * 2);
+      fftCtx.fill();
+      fftCtx.fillText('★ BPFI (162 Hz)', bpfiX + 8, 25);
+    }
+
+    function updateRulSimulation() {
+      const load = parseFloat(document.getElementById('simLoadSlider').value);
+      const vib = parseFloat(document.getElementById('simVibSlider').value);
+      const hours = parseFloat(document.getElementById('simHoursSlider').value);
+
+      document.getElementById('simLoadVal').textContent = `${load}%`;
+      document.getElementById('simVibVal').textContent = `${vib.toFixed(1)} G`;
+      document.getElementById('simHoursVal').textContent = `${hours} h/d`;
+
+      const factor = (load / 100) * (vib / 1.8) * (hours / 16);
+      const calcRul = Math.max(12, Math.round(142.5 / factor * 10) / 10);
+      document.getElementById('simResultRul').textContent = `${calcRul} h`;
+
+      const days = Math.round(calcRul / hours);
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + days);
+      document.getElementById('simResultDate').textContent = targetDate.toISOString().slice(0, 10);
+    }
+
+    function resetRulSim() {
+      document.getElementById('simLoadSlider').value = 100;
+      document.getElementById('simVibSlider').value = 1.8;
+      document.getElementById('simHoursSlider').value = 16;
+      updateRulSimulation();
+    }
+
+    function sendWorkOrder() {
+      playBeep(850, 0.1);
+      alert('CMMS(SAP PM)에 작업지시 #WO-2026-1115-09 가 성공적으로 전송되었습니다.');
+      addAuditLog('CMMS_WO_CREATE', 'AFP-ROBOT-01', '예지정비 작업지시 #WO-2026-1115-09 생성');
+    }
+
+    /* =================================================================
+       6. 모듈 E: SPC X-bar, R 관리도 & 벨 커브 히스토그램
+       ================================================================= */
+    const spcXbarCanvas = document.getElementById('spcXbarCanvas');
+    const spcXbarCtx = spcXbarCanvas.getContext('2d');
+    const spcHistCanvas = document.getElementById('spcHistCanvas');
+    const spcHistCtx = spcHistCanvas.getContext('2d');
+    const spcRCanvas = document.getElementById('spcRCanvas');
+    const spcRCtx = spcRCanvas.getContext('2d');
+
+    const spcData = [];
+    for (let i = 1; i <= 30; i++) {
+      let xbar = 6.348 + (Math.sin(i * 0.4) * 0.015) + (Math.random() - 0.5) * 0.02;
+      let rVal = 0.045 + Math.random() * 0.03;
+      spcData.push({ sub: i, xbar, rVal, isDrift: false });
+    }
+
+    function drawSpcCharts() {
+      // 1) X-bar Chart
+      const w = spcXbarCanvas.width = spcXbarCanvas.offsetWidth;
+      const h = spcXbarCanvas.height = spcXbarCanvas.offsetHeight;
+      spcXbarCtx.clearRect(0, 0, w, h);
+
+      const padL = 45, padR = 20, padT = 20, padB = 25;
+      const gw = w - padL - padR, gh = h - padT - padB;
+      const minVal = 6.24, maxVal = 6.46;
+      function toY(val) { return padT + (1.0 - (val - minVal) / (maxVal - minVal)) * gh; }
+
+      // 한계선
+      [
+        { label: 'UCL (6.43)', val: 6.43, color: '#FF3366', dash: [4, 4] },
+        { label: 'CL (6.35)', val: 6.35, color: '#10B981', dash: [] },
+        { label: 'LCL (6.27)', val: 6.27, color: '#FF3366', dash: [4, 4] }
+      ].forEach(lim => {
+        let y = toY(lim.val);
+        spcXbarCtx.strokeStyle = lim.color;
+        spcXbarCtx.setLineDash(lim.dash);
+        spcXbarCtx.beginPath(); spcXbarCtx.moveTo(padL, y); spcXbarCtx.lineTo(w - padR, y); spcXbarCtx.stroke();
+        spcXbarCtx.setLineDash([]);
+        spcXbarCtx.fillStyle = lim.color;
+        spcXbarCtx.font = '9px monospace';
+        spcXbarCtx.fillText(lim.label, 6, y + 3);
+      });
+
+      // 데이터 라인
+      spcXbarCtx.strokeStyle = '#00F0FF';
+      spcXbarCtx.lineWidth = 1.8;
+      spcXbarCtx.beginPath();
+      spcData.forEach((d, i) => {
+        let x = padL + (i / (spcData.length - 1)) * gw;
+        let y = toY(d.xbar);
+        if (i === 0) spcXbarCtx.moveTo(x, y);
+        else spcXbarCtx.lineTo(x, y);
+      });
+      spcXbarCtx.stroke();
+
+      spcData.forEach((d, i) => {
+        let x = padL + (i / (spcData.length - 1)) * gw;
+        let y = toY(d.xbar);
+        spcXbarCtx.fillStyle = d.isDrift ? '#FF3366' : '#00F0FF';
+        spcXbarCtx.beginPath();
+        spcXbarCtx.arc(x, y, d.isDrift ? 5 : 3, 0, Math.PI * 2);
+        spcXbarCtx.fill();
+      });
+
+      // 2) Bell Curve 히스토그램
+      const hw = spcHistCanvas.width = spcHistCanvas.offsetWidth;
+      const hh = spcHistCanvas.height = spcHistCanvas.offsetHeight;
+      spcHistCtx.clearRect(0, 0, hw, hh);
+
+      const mean = 6.348, sigma = 0.026;
+      spcHistCtx.fillStyle = 'rgba(0, 240, 255, 0.18)';
+      spcHistCtx.strokeStyle = '#00F0FF';
+      spcHistCtx.lineWidth = 2;
+      spcHistCtx.beginPath();
+      spcHistCtx.moveTo(30, hh - 20);
+
+      for (let x = 30; x <= hw - 30; x += 3) {
+        let xVal = minVal + ((x - 30) / (hw - 60)) * (maxVal - minVal);
+        let z = (xVal - mean) / sigma;
+        let pdf = Math.exp(-0.5 * z * z);
+        let y = (hh - 20) - pdf * (hh - 45);
+        spcHistCtx.lineTo(x, y);
+      }
+      spcHistCtx.lineTo(hw - 30, hh - 20);
+      spcHistCtx.closePath();
+      spcHistCtx.fill();
+      spcHistCtx.stroke();
+
+      // 규격 한계선 (LSL / USL)
+      let lslX = 30 + ((6.20 - minVal) / (maxVal - minVal)) * (hw - 60);
+      let uslX = 30 + ((6.50 - minVal) / (maxVal - minVal)) * (hw - 60);
+      spcHistCtx.strokeStyle = '#FF3366';
+      spcHistCtx.setLineDash([3, 3]);
+      spcHistCtx.beginPath();
+      spcHistCtx.moveTo(uslX, 10); spcHistCtx.lineTo(uslX, hh - 20);
+      spcHistCtx.stroke();
+      spcHistCtx.setLineDash([]);
+      spcHistCtx.fillStyle = '#FFA5BA';
+      spcHistCtx.font = '10px monospace';
+      spcHistCtx.fillText('USL (6.50)', uslX - 45, 18);
+
+      // 3) R Chart
+      const rw = spcRCanvas.width = spcRCanvas.offsetWidth;
+      const rh = spcRCanvas.height = spcRCanvas.offsetHeight;
+      spcRCtx.clearRect(0, 0, rw, rh);
+
+      spcRCtx.strokeStyle = '#C084FC';
+      spcRCtx.lineWidth = 1.5;
+      spcRCtx.beginPath();
+      spcData.forEach((d, i) => {
+        let x = padL + (i / (spcData.length - 1)) * (rw - padL - padR);
+        let y = 15 + (1.0 - d.rVal / 0.12) * (rh - 35);
+        if (i === 0) spcRCtx.moveTo(x, y);
+        else spcRCtx.lineTo(x, y);
+      });
+      spcRCtx.stroke();
+    }
+
+    function injectSpcDrift() {
+      playBeep(350, 0.25, 'sawtooth');
+      for (let i = 24; i < spcData.length; i++) {
+        spcData[i].xbar += 0.09;
+        spcData[i].isDrift = true;
+      }
+      drawSpcCharts();
+      alert('⚠️ [경보] 서브그룹 #25~#30에서 관리상한선(UCL 6.43mm) 초과 감지! Western Electric Rule 1 위반.');
+      addAuditLog('SPC_ALARM_TRIGGER', 'KC-01', '관리상한선 초과 이상 드리프트 발생');
+    }
+
+    /* =================================================================
+       7. 모듈 A: 적층 인시추(AFP) 8-Tow 테이프 뷰어 & 스트림
+       ================================================================= */
+    const towCanvas = document.getElementById('towVisualizerCanvas');
+    const towCtx = towCanvas.getContext('2d');
+    const streamTempCanvas = document.getElementById('streamTempCanvas');
+    const streamLaserCanvas = document.getElementById('streamLaserCanvas');
+    const streamSpeedCanvas = document.getElementById('streamSpeedCanvas');
+    const tempCtx = streamTempCanvas.getContext('2d');
+    const laserCtx = streamLaserCanvas.getContext('2d');
+    const speedCtx = streamSpeedCanvas.getContext('2d');
+
+    const streamLen = 90;
+    const streamTempData = new Array(streamLen).fill(185);
+    const streamLaserData = new Array(streamLen).fill(0.02);
+    const streamSpeedData = new Array(streamLen).fill(850);
+
+    function drawTowVisualizer() {
+      const w = towCanvas.width = towCanvas.offsetWidth;
+      const h = towCanvas.height = towCanvas.offsetHeight;
+      towCtx.clearRect(0, 0, w, h);
+
+      const towCount = 8;
+      const towW = (w - 60) / towCount;
+
+      for (let t = 0; t < towCount; t++) {
+        let x = 30 + t * towW;
+        let isFaulty = (STATE.isTestFaultInjected && t === 2); // Tow #3 결함
+
+        towCtx.fillStyle = isFaulty ? '#FF3366' : 'rgba(0, 240, 255, 0.2)';
+        towCtx.strokeStyle = isFaulty ? '#FF3366' : '#00F0FF';
+        towCtx.lineWidth = 1.5;
+
+        // 적층 테이프 스트립 렌더링
+        towCtx.fillRect(x + 4, 15, towW - 8, h - 35);
+        towCtx.strokeRect(x + 4, 15, towW - 8, h - 35);
+
+        // 텍스트 라벨
+        towCtx.fillStyle = '#fff';
+        towCtx.font = 'bold 9px monospace';
+        towCtx.fillText(`T${t + 1}`, x + towW / 2 - 6, h - 8);
+
+        if (isFaulty) {
+          towCtx.fillStyle = '#FFA5BA';
+          towCtx.fillText('★ 결함', x + towW / 2 - 14, 30);
+        }
+      }
+    }
+
+    function updateInsituStreams() {
+      if (!STATE.streamPaused) {
+        let tempVal = 185 + (Math.random() - 0.5) * 1.8;
+        let laserVal = (Math.random() - 0.5) * 0.05;
+        let speedVal = 850 + (Math.random() - 0.5) * 6;
+
+        if (STATE.isTestFaultInjected) {
+          tempVal += 17.5;
+          laserVal += 0.32;
+          document.getElementById('insituLeadDistVal').textContent = '2.2 mm';
+          document.getElementById('insituProbVal').textContent = '94.2%';
+          document.getElementById('tow3Status').style.color = '#FF3366';
+          document.getElementById('tow3Status').textContent = 'Tow #3 (주름/브리징)';
+        } else {
+          document.getElementById('tow3Status').style.color = '#4ADE80';
+          document.getElementById('tow3Status').textContent = 'Tow #3 (정상)';
+        }
+
+        streamTempData.shift(); streamTempData.push(tempVal);
+        streamLaserData.shift(); streamLaserData.push(laserVal);
+        streamSpeedData.shift(); streamSpeedData.push(speedVal);
+
+        document.getElementById('streamTempVal').textContent = `${tempVal.toFixed(1)} ℃`;
+        document.getElementById('streamHeightVal').textContent = `${laserVal >= 0 ? '+' : ''}${laserVal.toFixed(2)} mm`;
+        document.getElementById('streamSpeedVal').textContent = `${Math.round(speedVal)} mm/s`;
+
+        renderStream(tempCtx, streamTempCanvas, streamTempData, 160, 220, '#FF5A7E');
+        renderStream(laserCtx, streamLaserCanvas, streamLaserData, -0.2, 0.45, '#00F0FF');
+        renderStream(speedCtx, streamSpeedCanvas, streamSpeedData, 750, 950, '#C084FC');
+
+        drawTowVisualizer();
+      }
+      requestAnimationFrame(updateInsituStreams);
+    }
+
+    function renderStream(ctx, canvas, data, min, max, strokeColor) {
+      const w = canvas.width = canvas.offsetWidth;
+      const h = canvas.height = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      data.forEach((val, i) => {
+        let x = (i / (data.length - 1)) * w;
+        let y = h - ((val - min) / (max - min)) * h;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    function toggleStreamPause() {
+      STATE.streamPaused = !STATE.streamPaused;
+      document.getElementById('streamPauseBtn').textContent = STATE.streamPaused ? '재개' : '일시정지';
+      playBeep(600, 0.05);
+    }
+
+    function injectInsituDefect(type) {
+      STATE.isTestFaultInjected = true;
+      playBeep(450, 0.2, 'sawtooth');
+      addAuditLog('TEST_FAULT_INJECT', 'AFP-ROBOT-01', `테스트 결함 주입: ${type}`);
+    }
+
+    function clearInsituDefect() {
+      STATE.isTestFaultInjected = false;
+      document.getElementById('insituLeadDistVal').textContent = '3.8 mm';
+      document.getElementById('insituProbVal').textContent = '76.4%';
+      playBeep(750, 0.05);
+    }
+
+    /* =================================================================
+       8. 모듈 D: 3D 반응표면 등고선 지형도 렌더러
+       ================================================================= */
+    const rsCanvas = document.getElementById('responseSurfaceCanvas');
+    const rsCtx = rsCanvas.getContext('2d');
+
+    function drawResponseSurface() {
+      const w = rsCanvas.width;
+      const h = rsCanvas.height;
+      rsCtx.clearRect(0, 0, w, h);
+
+      const cols = 45, rows = 28;
+      const cw = w / cols, rh = h / rows;
+      const curSpeed = parseFloat(document.getElementById('simParamSpeed').value);
+      const curPress = parseFloat(document.getElementById('simParamPressure').value);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let speed = 0.2 + (c / cols) * 1.1;
+          let press = 200 + ((rows - r) / rows) * 1000;
+          let porosity = 0.35 + Math.pow(speed / 0.8, 1.8) * 0.45 - (press / 1000) * 0.28;
+          porosity = Math.max(0.1, Math.min(2.5, porosity));
+
+          if (porosity <= 0.8) rsCtx.fillStyle = 'rgba(16, 185, 129, 0.35)';
+          else if (porosity <= 1.0) rsCtx.fillStyle = 'rgba(245, 158, 11, 0.4)';
+          else rsCtx.fillStyle = 'rgba(255, 51, 102, 0.45)';
+
+          rsCtx.fillRect(c * cw, r * rh, cw + 1, rh + 1);
+        }
+      }
+
+      // 현재 운전점 (★ 파란 점)
+      let curX = ((curSpeed - 0.2) / 1.1) * w;
+      let curY = (1.0 - (curPress - 200) / 1000) * h;
+
+      rsCtx.fillStyle = '#00F0FF';
+      rsCtx.beginPath(); rsCtx.arc(curX, curY, 7, 0, Math.PI * 2); rsCtx.fill();
+      rsCtx.strokeStyle = '#fff'; rsCtx.lineWidth = 2; rsCtx.stroke();
+      rsCtx.fillStyle = '#fff'; rsCtx.font = 'bold 11px monospace';
+      rsCtx.fillText('★ 현재 운전점', curX + 10, curY + 4);
+
+      // AI 권고 최적점 (★ 초록 점)
+      let optX = ((0.82 - 0.2) / 1.1) * w;
+      let optY = (1.0 - (780 - 200) / 1000) * h;
+
+      rsCtx.fillStyle = '#10B981';
+      rsCtx.beginPath(); rsCtx.arc(optX, optY, 8, 0, Math.PI * 2); rsCtx.fill();
+      rsCtx.stroke();
+      rsCtx.fillText('★ AI 최적 권고점', optX + 12, optY + 4);
+    }
+
+    function updateSimResponse() {
+      const speed = parseFloat(document.getElementById('simParamSpeed').value);
+      const press = parseFloat(document.getElementById('simParamPressure').value);
+      const temp = parseFloat(document.getElementById('simParamTemp').value);
+
+      document.getElementById('simParamSpeedVal').textContent = `${speed.toFixed(2)} m/s`;
+      document.getElementById('simParamPressureVal').textContent = `${press} N`;
+      document.getElementById('simParamTempVal').textContent = `${temp} ℃`;
+
+      let predPorosity = 0.35 + Math.pow(speed / 0.8, 1.8) * 0.45 - (press / 1000) * 0.28;
+      predPorosity = Math.max(0.12, Math.round(predPorosity * 100) / 100);
+      document.getElementById('simPorosityPred').textContent = `${predPorosity.toFixed(2)} %`;
+
+      let margin = Math.round((1.0 - predPorosity) * 100) / 100;
+      document.getElementById('simMarginVal').textContent = `${margin >= 0 ? '+' : ''}${margin.toFixed(2)} %p 여유`;
+
+      const isExtrapolated = (speed > 1.05 || press > 1050);
+      document.getElementById('extrapolationBanner').style.display = isExtrapolated ? 'flex' : 'none';
+      document.getElementById('simConfidenceVal').textContent = isExtrapolated ? '42.0% (외삽 경고)' : '92.4% (신뢰 영역)';
+      document.getElementById('simConfidenceVal').style.color = isExtrapolated ? '#FF3366' : 'var(--accent-cyan)';
+
+      drawResponseSurface();
+    }
+
+    function applyAiOptimalParam() {
+      playBeep(850, 0.1);
+      document.getElementById('simParamSpeed').value = 0.82;
+      document.getElementById('simParamPressure').value = 780;
+      document.getElementById('simParamTemp').value = 188;
+      updateSimResponse();
+      alert('AI 권고 최적 파라미터(속도 0.82m/s, 압력 780N, 온도 188℃)가 적용되었습니다.');
+    }
+
+    function exportDoePlan() {
+      playBeep(700, 0.05);
+      const csv = "Run,Speed_mps,Pressure_N,Temp_C,Target_Porosity\n1,0.65,650,185,0.58\n2,0.82,780,188,0.48\n3,0.50,850,180,0.38";
+      downloadFile(csv, "AEROQ_DOE_PLAN.csv", "text/csv");
+    }
+
+    /* =================================================================
+       9. 공통 유틸 및 감사 로그
+       ================================================================= */
+    function addAuditLog(action, part, detail) {
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      STATE.auditLogs.unshift({ time: now, user: 'INSP-7704', action, part, model: 'v2.4.1', detail });
+      renderAuditLogs();
+    }
+
+    function renderAuditLogs() {
+      const tbody = document.getElementById('auditLogTbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      STATE.auditLogs.forEach(l => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${l.time}</td>
+          <td>${l.user}</td>
+          <td><code>${l.action}</code></td>
+          <td>${l.part}</td>
+          <td>${l.model}</td>
+          <td>${l.detail}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function downloadAuditLogCsv() {
+      let csv = "Timestamp,User,Action,Part_ID,Model_Version,Detail\n";
+      STATE.auditLogs.forEach(l => {
+        csv += `"${l.time}","${l.user}","${l.action}","${l.part}","${l.model}","${l.detail.replace(/"/g, '""')}"\n`;
+      });
+      downloadFile(csv, "AEROQ_AUDIT_TRAIL.csv", "text/csv");
+    }
+
+    function downloadFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); playBeep(650, 0.05); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); playBeep(500, 0.05); }
+    function openGithubModal() { openModal('githubModal'); }
+    function connectGithubAccount() {
+      const user = document.getElementById('githubUsernameInput').value || 'aero-engineer';
+      const repo = document.getElementById('githubRepoInput').value || 'aero-engineer/aero-q-manufacturing';
+      
+      playBeep(900, 0.12);
+      document.getElementById('ghProfileName').textContent = `@${user}`;
+      document.getElementById('ghRepoDisplay').textContent = repo;
+      document.getElementById('githubLoggedOutView').style.display = 'none';
+      document.getElementById('githubLoggedInView').style.display = 'block';
+      
+      const btn = document.getElementById('githubConnectBtn');
+      btn.style.borderColor = 'rgba(0, 240, 255, 0.5)';
+      btn.style.background = 'rgba(0, 240, 255, 0.15)';
+      document.getElementById('githubStatusLabel').innerHTML = `<span style="color:#00F0FF; font-weight:700;">@${user}</span>`;
+      
+      addAuditLog('GITHUB_AUTH_CONNECT', STATE.currentPart, `GitHub 계정(@${user}) 및 저장소(${repo}) 연동 승인`);
+      alert(`[GitHub 연동 완료]\n사용자: @${user}\n저장소: ${repo}\n\n성공적으로 연동되었습니다!`);
+    }
+
+    function disconnectGithubAccount() {
+      playBeep(500, 0.08);
+      document.getElementById('githubLoggedOutView').style.display = 'block';
+      document.getElementById('githubLoggedInView').style.display = 'none';
+      const btn = document.getElementById('githubConnectBtn');
+      btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      btn.style.background = 'rgba(255, 255, 255, 0.05)';
+      document.getElementById('githubStatusLabel').textContent = 'GitHub 계정 연결';
+      addAuditLog('GITHUB_AUTH_DISCONNECT', STATE.currentPart, 'GitHub 계정 연동 해제');
+      alert('GitHub 계정 연동이 해제되었습니다.');
+    }
+
+    function syncGithubExport(type) {
+      playBeep(850, 0.08);
+      if (type === 'audit') {
+        alert('최신 불변 감사 로그(Audit Trail) 1건이 원격 저장소 main 브랜치 commit #8f9b3c 로 성공적으로 푸시되었습니다.');
+        addAuditLog('GITHUB_SYNC_AUDIT', STATE.currentPart, '감사 로그 GitHub 원격 저장소 동기화 푸시');
+      } else {
+        alert('AERO-Q PRD v1.0 정식 명세서가 GitHub Release Tag [v1.0-RC3] 로 발행되었습니다.');
+        addAuditLog('GITHUB_RELEASE_PUBLISH', STATE.currentPart, 'PRD v1.0 GitHub Release Tag 발행');
+      }
+    }
+
+    function openModelRegistryModal() { openModal('modelRegistryModal'); }
+    function openAuditLogModal() { renderAuditLogs(); openModal('auditLogModal'); }
+    function open3dTwinModal() {
+      openModal('twin3dModal');
+      const mCanvas = document.getElementById('twinModalCanvas');
+      const mCtx = mCanvas.getContext('2d');
+      mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
+      mCtx.drawImage(part3dCanvas, 0, 0, mCanvas.width, mCanvas.height);
+    }
+
+    function changePartContext(val) {
+      STATE.currentPart = val;
+      addAuditLog('PART_CHANGE', val, '작업 대상 부품 전환');
+      playBeep(700, 0.05);
+      alert(`공정 부품이 전환되었습니다: ${val}`);
+    }
+
+    function exportFullReport() {
+      playBeep(900, 0.1);
+      alert(`[AS9100/NADCAP 규격 품질 종합 리포트 생성]\n부품 ID: ${STATE.currentPart}\nCpk: 1.74 | NDI 판정: 진행중 | 설비 RUL: 142.5h\n\nPDF 리포트가 성공적으로 생성되었습니다.`);
+    }
+
+    function executeRagSearch() {
+      const q = document.getElementById('ragQueryInput').value;
+      if (!q.trim()) return;
+      playBeep(800, 0.08);
+      alert(`[시맨틱 질의]\n검색어: "${q}"\n\nAS9100D 표준 및 과거 8D 보고서에서 관련 조항 2건을 인출하였습니다.`);
+    }
+
+    // 60FPS 애니메이션 루프
+    function mainAnimationLoop() {
+      drawCScan();
+      drawAScan();
+      drawFftSpectrum();
+      render3dPart();
+      requestAnimationFrame(mainAnimationLoop);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      drawCScan();
+      drawBScan();
+      drawAScan();
+      drawRulChart();
+      drawSpcCharts();
+      drawResponseSurface();
+      render3dPart();
+      renderAuditLogs();
+      mainAnimationLoop();
+      updateInsituStreams();
+    });
+  </script>
+</body>
+</html>
